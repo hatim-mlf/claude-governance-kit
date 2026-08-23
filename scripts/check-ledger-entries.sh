@@ -84,6 +84,20 @@ if [ $staged_only -eq 1 ]; then
   fi
 fi
 
+# Duplicate ids. Scanned across the WHOLE week file, never limited to the entries this
+# commit touched — a collision by definition involves an entry someone else wrote, so a
+# --staged-scoped check would miss exactly the case it exists for.
+#
+# This check is the reason next-ledger-id.sh exists. Two sessions appended to the same
+# week file believing they held the same free id; the second append destroyed the first
+# entry, and nothing noticed until the work it recorded was looked for and was not there.
+# The allocator makes the collision unlikely; this makes it visible when the allocator
+# was not used.
+duplicate_ids="$(
+  grep -oE '^## [0-9]{4}-W[0-9]{2}-[0-9]+' "$week_file" \
+    | sed 's|^## ||' | sort | uniq -d
+)"
+
 now_stamp="$(date +'%Y-%m-%d %H:%M')"
 now_offset="$(date +'%z')"
 
@@ -169,13 +183,26 @@ findings="$(
 )"
 status=$?
 
-if [ -n "$findings" ]; then
+duplicate_report=""
+if [ -n "$duplicate_ids" ]; then
+  duplicate_report="$(printf '  %s: id used more than once in this week file\n' $duplicate_ids)"
+fi
+
+if [ -n "$findings" ] || [ -n "$duplicate_report" ]; then
   echo "Ledger entries need a look — $(basename "$week_file")"
-  echo "$findings"
+  [ -n "$duplicate_report" ] && echo "$duplicate_report"
+  [ -n "$findings" ] && echo "$findings"
   echo
-  echo "  Read stamps off the machine, never from session context:"
-  echo "    date +\"%Y-%m-%d %H:%M %z\""
-  echo "  A fabricated timestamp reads as evidence."
+  if [ -n "$duplicate_report" ]; then
+    echo "  Get the next free id before reserving, never from memory:"
+    echo "    scripts/next-ledger-id.sh"
+    echo "  Ids are never reused — see ledger/README.md."
+  fi
+  if [ -n "$findings" ]; then
+    echo "  Read stamps off the machine, never from session context:"
+    echo "    date +\"%Y-%m-%d %H:%M %z\""
+    echo "  A fabricated timestamp reads as evidence."
+  fi
   exit 1
 fi
 
