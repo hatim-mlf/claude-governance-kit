@@ -43,20 +43,26 @@ the moment nobody wants to make one.
 **The test:** would a project that has never seen this app want the change? If yes, mirror
 it. If it only makes sense next to one of your own modules, leave it where it is.
 
-## What "mirror" means today
+## What "mirror" means
 
-the governance kit (`governance.config.json` names its path) is a git repository with **one commit and no
-remote** as of 2026-08-23 — the extraction landed, the publishing decision has not. So:
+The governance kit (`governance.config.json` names its path) has a remote as of
+2026-08-23, so all three steps are required and none of them is optional:
 
 1. **Copy the change into the kit**, parameterised. Project-specific names, paths and bug
    numbers become placeholders; the mechanism survives, the content does not.
-2. **Commit it there.**
-3. **The push is the operator's step.** Creating a remote is outward-facing — it publishes
-   the system under their name. Do not add a remote or push without being asked. Say in the
-   ledger entry that the kit has an unpushed commit waiting.
+2. **Commit it there**, with a message that says what the change is for — the kit's history
+   is the only explanation another project will ever get.
+3. **Push it.** This step used to be deferred to the operator because creating a remote
+   publishes the system under their name, which was their decision to make. They made it.
+   Now an unpushed commit is a change that reaches no other project, which is the failure
+   below with one extra step of false comfort — the mirror looks done and is not.
 
-Once a remote exists, tighten this rule to require the push. Requiring it before then makes
-the rule unfollowable, and a rule that cannot be followed is one people learn to skip.
+**A mirror is not finished until `git status` in the kit is clean and `git log
+origin/main..HEAD` is empty.** Check both; do not assume the push succeeded.
+
+If the push fails — no network, no credentials, a protected branch — **say so in the
+session's ledger entry, naming the commit that is waiting.** A silently unpushed commit is
+indistinguishable from a change nobody made.
 
 ## The failure this prevents
 
