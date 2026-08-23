@@ -136,7 +136,25 @@ copy_new templates/FILE_SIZE_REVIEW.md FILE_SIZE_REVIEW.md
 copy_new "templates/ledger/README.md" "ledger/README.md"
 copy_new "templates/reports/README.md" "reports/README.md"
 copy_new "templates/reports/bugs reports/BUG_TRACKER.md" "reports/bugs reports/BUG_TRACKER.md"
-mkdir -p "$TARGET/reports"/{bugs,errors,audits,sessions,verification} "$TARGET/prompts" "$TARGET/docs/roadmap"
+# These directories are structural, not incidental: the report classifier reads the
+# FOLDER a file sits in to decide its kind — see the long note in
+# generate-report-catalog.mjs, which records the misclassification that happened when
+# two of them were empty. Git stores files, not directories, so `mkdir` alone means
+# they vanish on the target's first commit and nobody sees it until a report lands in
+# the wrong place. Each one gets a .gitkeep that says why it is there, so the next
+# person to find an "empty" folder does not tidy it away.
+for d in reports/bugs reports/errors reports/audits reports/sessions \
+         reports/verification prompts docs/roadmap; do
+  mkdir -p "$TARGET/$d"
+  keep="$TARGET/$d/.gitkeep"
+  [ -e "$keep" ] || cat > "$keep" << 'KEEP'
+Keeps this directory in git, which stores files and not directories.
+
+The directory is load-bearing: the dashboard's report classifier decides a report's
+kind from the folder it sits in, so a missing folder is a misfiled report. Delete this
+file once the directory holds something else.
+KEEP
+done
 copy_new "templates/prompts/SESSION_template.md" "prompts/SESSION_template.md"
 
 # --- dashboard ----------------------------------------------------------------
