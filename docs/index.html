@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>claude-governance-kit — system overview</title>
+<style>
+  :root {
+    --color-surface: oklch(14% 0.01 260);
+    --color-surface-raised: oklch(19% 0.012 260);
+    --color-border: oklch(28% 0.015 260);
+    --color-text: oklch(93% 0.01 260);
+    --color-text-dim: oklch(70% 0.015 260);
+    --color-accent: oklch(72% 0.19 40);
+    --color-accent-soft: oklch(72% 0.19 40 / 0.14);
+    --text-base: clamp(1rem, 0.92rem + 0.3vw, 1.1rem);
+    --text-hero: clamp(2.4rem, 1.2rem + 4.5vw, 4.6rem);
+    --space-section: clamp(3.5rem, 2.5rem + 4vw, 7rem);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: var(--text-base);
+    line-height: 1.65;
+  }
+  header.hero {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: var(--space-section) 1.5rem calc(var(--space-section) / 2);
+  }
+  .kicker {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  h1 {
+    font-size: var(--text-hero);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    margin: 0.6rem 0 1.2rem;
+  }
+  h1 em { font-style: normal; color: var(--color-accent); }
+  .lede { max-width: 44rem; color: var(--color-text-dim); font-size: 1.15em; }
+  main { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem var(--space-section); }
+  section { margin-top: var(--space-section); }
+  h2 {
+    font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.2rem);
+    letter-spacing: -0.02em;
+    margin: 0 0 1rem;
+  }
+  h2 .n { font-family: var(--mono); color: var(--color-accent); font-size: 0.6em; vertical-align: super; margin-right: 0.4em; }
+  p.dim, li { color: var(--color-text-dim); }
+  li strong { color: var(--color-text); }
+  ul { padding-left: 1.2rem; }
+  li { margin: 0.45rem 0; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--color-accent-soft);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .cell { background: var(--color-surface-raised); padding: 1.2rem 1.3rem; }
+  .cell h3 { margin: 0 0 0.4rem; font-size: 1rem; font-family: var(--mono); color: var(--color-accent); }
+  .cell p { margin: 0; font-size: 0.92rem; color: var(--color-text-dim); }
+  .diagram {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); }
+  td { color: var(--color-text-dim); }
+  td:first-child { color: var(--color-text); font-family: var(--mono); font-size: 0.85em; white-space: nowrap; }
+  footer {
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--space-section);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    color: var(--color-text-dim);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <p class="kicker">claude-governance-kit</p>
+  <h1>Governance for <em>AI-assisted</em> development.</h1>
+  <p class="lede">
+    An execution ledger, a defect tracker, a reporting protocol, behavioural skills,
+    enforcement hooks, and a generated dashboard — installed into any git repository,
+    so what an AI session started, changed, verified, and left open is always written
+    down, and always visible.
+  </p>
+</header>
+
+<main>
+
+<section aria-labelledby="why">
+  <h2 id="why"><span class="n">01</span>Why it exists</h2>
+  <p class="dim">
+    AI coding sessions produce work with no memory. A fix gets recorded as done before
+    anyone confirmed it. A failure is logged nowhere. A decision is re-litigated every
+    session. A credential is committed once and lives in history forever. This kit is the
+    discipline layer that prevents that — as files, scripts and hooks inside the
+    repository itself, not as an external service.
+  </p>
+</section>
+
+<section aria-labelledby="architecture">
+  <h2 id="architecture"><span class="n">02</span>How the files connect</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+    subgraph Session["Claude Code session"]
+        P["prompts/SESSION_*.md<br/>the commission"]
+        SK[".claude/skills/<br/>decide + record"]
+        RL[".claude/rules/<br/>path-scoped invariants"]
+    end
+
+    subgraph Repo["Governed repository"]
+        L["ledger/YYYY-Www.md<br/>reserve → close, with evidence"]
+        RP["reports/ bugs · errors · audits · sessions"]
+        TR["BUG_TRACKER.md<br/>STRUCTURAL_PROBLEMS.md"]
+        CF["governance.config.json<br/>project name · roots · sentinels"]
+    end
+
+    subgraph Enforce["Enforcement"]
+        PC["scripts/pre-commit.sh<br/>BLOCKS secrets · WARNS stale ledger"]
+        NH["scripts/next-ledger-id.sh<br/>collision-proof ids"]
+        HK[".claude/settings.json<br/>SessionEnd + Stop hooks"]
+    end
+
+    subgraph Dash["bug-tracker-dashboard/app"]
+        DS["scripts/dashboard-sync.sh<br/>never fails the session"]
+        SY["scripts/sync-dashboard.mjs<br/>fingerprint + (id, status) gate"]
+        GEN["generators:<br/>config · ledger · bugs · reports · project"]
+        UI["src/data/*.ts → React views<br/>Defects · Ledger · Reports · Project"]
+    end
+
+    P --> SK --> L
+    RL -. loads on matching files .-> SK
+    SK --> RP --> TR
+    NH --> L
+    PC -. gates every commit .-> Repo
+    HK --> DS --> SY
+    L --> SY
+    SY --> GEN
+    RP --> GEN
+    TR --> GEN
+    CF -->|layout + sentinels| GEN
+    GEN --> UI
+    </pre>
+  </div>
+  <p class="dim">
+    Work is <strong>commissioned</strong> by a session prompt, <strong>recorded</strong>
+    in the ledger as it happens, <strong>written up</strong> by the reporting skills,
+    <strong>gated</strong> by the pre-commit hook, and <strong>published</strong> to the
+    dashboard automatically at session end and per turn — idempotently, keyed on what
+    actually changed.
+  </p>
+</section>
+
+<section aria-labelledby="pieces">
+  <h2 id="pieces"><span class="n">03</span>What installs where</h2>
+  <table>
+    <thead><tr><th>Path in target project</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td>governance.config.json</td><td>The one config file: project name, and every root the dashboard reads, each with a sentinel file that proves the root is real.</td></tr>
+      <tr><td>ledger/</td><td>Append-only execution log, one file per ISO week. Every task: reserved before starting (with a machine-read timestamp and an id from <code>next-ledger-id.sh</code>), closed with a summary, touched files, and how it was verified.</td></tr>
+      <tr><td>reports/</td><td>One folder per report type — bugs, errors, audits, sessions, verification — each written with its own skill, each citing its ledger id.</td></tr>
+      <tr><td>reports/bugs reports/BUG_TRACKER.md</td><td>The live defect register. Status vocabulary separates <em>fixed, unverified</em> from <em>fixed, verified</em>.</td></tr>
+      <tr><td>STRUCTURAL_PROBLEMS.md</td><td>The second register: tooling, layout and process defects, plus a Lessons table.</td></tr>
+      <tr><td>.claude/skills/</td><td>14 skills. Six record what happened (bug/error/audit/session reports, session prompt, dashboard sync); eight decide what to do (diagnosing-bugs, grill-me, codebase-design, writing-for-agents, tdd, project-code-review, to-tickets).</td></tr>
+      <tr><td>.claude/rules/</td><td>Path-scoped invariants that load only when matching code is opened, plus a README on how to write one.</td></tr>
+      <tr><td>scripts/</td><td>The pre-commit gate, the hook installer, the ledger-entry timestamp checker, the id allocator, the dashboard sync runner.</td></tr>
+      <tr><td>bug-tracker-dashboard/</td><td>A local Vite/React app. Generators turn the Markdown into typed data; four views render it. No backend, no accounts.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section aria-labelledby="rules">
+  <h2 id="rules"><span class="n">04</span>The design rules</h2>
+  <div class="grid">
+    <div class="cell"><h3>The ledger is the spine</h3><p>Reserve before starting, close when done, cite the entry id from every other record. Nothing is duplicated into the ledger; it points outward.</p></div>
+    <div class="cell"><h3>Fixed ≠ verified</h3><p>A commit is a claim. Only named evidence — a capture, a test run, a scenario — moves a row to verified. The dashboard renders the split.</p></div>
+    <div class="cell"><h3>Loud failure, never silent skip</h3><p>Generators validate roots by sentinel and die loudly. The sync hook logs every skip to a file outside the repo — a log inside a repo you cannot find is not a log.</p></div>
+    <div class="cell"><h3>Block only what is never legitimate</h3><p>The pre-commit hook blocks credentials and warns on everything else. A gate that blocks real work gets bypassed until it means nothing.</p></div>
+    <div class="cell"><h3>No cron</h3><p>The dashboard syncs inside sessions only. A scheduler would be a second writer to the working tree — the problem the system exists to prevent.</p></div>
+    <div class="cell"><h3>The system is a means</h3><p>A defect in the system gets its own register row — but filing it does not mean stopping application work to fix it.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="install">
+  <h2 id="install"><span class="n">05</span>Install</h2>
+  <pre><code>git clone https://github.com/&lt;you&gt;/claude-governance-kit
+cd claude-governance-kit
+./install.sh /path/to/your/project
+
+# then, in the target project:
+cd bug-tracker-dashboard/app
+npm install &amp;&amp; npm run sync &amp;&amp; npm run dev   # → http://localhost:5173</code></pre>
+  <p class="dim">
+    The installer asks for a project name, short id, and source directory; copies
+    everything in without overwriting anything that already exists; writes
+    <code>governance.config.json</code>; and installs the git pre-commit hook.
+  </p>
+</section>
+
+</main>
+
+<footer>
+  MIT · vendored skills under .claude/skills are MIT by Matt Pocock — see UPSTREAM.md
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#141419',
+      primaryColor: '#1c1c24',
+      primaryBorderColor: '#3a3a44',
+      primaryTextColor: '#e8e8ee',
+      lineColor: '#e8713a',
+      fontFamily: 'ui-monospace, Menlo, monospace',
+      fontSize: '13px'
+    }
+  });
+</script>
+
+</body>
+</html>

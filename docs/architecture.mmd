@@ -1,0 +1,39 @@
+flowchart TD
+    subgraph Session["Claude Code session"]
+        P["prompts/SESSION_*.md — the commission"]
+        SK[".claude/skills/ — decide + record"]
+        RL[".claude/rules/ — path-scoped invariants"]
+    end
+
+    subgraph Repo["Governed repository"]
+        L["ledger/YYYY-Www.md — reserve → close, with evidence"]
+        RP["reports/ — bugs · errors · audits · sessions"]
+        TR["BUG_TRACKER.md + STRUCTURAL_PROBLEMS.md"]
+        CF["governance.config.json — roots + sentinels"]
+    end
+
+    subgraph Enforce["Enforcement"]
+        PC["scripts/pre-commit.sh — BLOCKS secrets, WARNS stale ledger"]
+        NH["scripts/next-ledger-id.sh — collision-proof ids"]
+        HK[".claude/settings.json — SessionEnd + Stop hooks"]
+    end
+
+    subgraph Dash["bug-tracker-dashboard/app"]
+        DS["scripts/dashboard-sync.sh — never fails the session"]
+        SY["scripts/sync-dashboard.mjs — fingerprint + (id, status) gate"]
+        GEN["generators: config · ledger · bugs · reports · project"]
+        UI["src/data/*.ts → React views: Defects · Ledger · Reports · Project"]
+    end
+
+    P --> SK --> L
+    RL -. loads on matching files .-> SK
+    SK --> RP --> TR
+    NH --> L
+    PC -. gates every commit .-> Repo
+    HK --> DS --> SY
+    L --> SY
+    SY --> GEN
+    RP --> GEN
+    TR --> GEN
+    CF --> GEN
+    GEN --> UI

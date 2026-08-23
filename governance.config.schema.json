@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/claude-governance-kit/governance.config.schema.json",
+  "title": "claude-governance-kit configuration",
+  "description": "The single file that adapts the governance system to one repository. Every dashboard generator reads it and validates each root by its sentinel before touching the filesystem, so a wrong path here fails loudly at generation time instead of silently producing an empty catalog.",
+  "type": "object",
+  "required": ["projectName", "projectShortName", "tracker", "roots", "dashboard"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "projectName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name, rendered in the dashboard header."
+    },
+    "projectShortName": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Lowercase id used in log file names. Must be filename-safe."
+    },
+    "tracker": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to the live defect register, relative to the repository root."
+    },
+    "roots": {
+      "type": "object",
+      "description": "The directories the generators walk. Each carries a sentinel — a file or directory that must exist inside it — so a mistyped path is caught before anything is generated from the wrong tree.",
+      "required": ["repository", "reports", "ledger", "docs", "source"],
+      "additionalProperties": { "$ref": "#/definitions/root" },
+      "properties": {
+        "repository": { "$ref": "#/definitions/root" },
+        "reports":    { "$ref": "#/definitions/root" },
+        "ledger":     { "$ref": "#/definitions/root" },
+        "docs":       { "$ref": "#/definitions/root" },
+        "source":     { "$ref": "#/definitions/root" }
+      }
+    },
+    "dashboard": {
+      "type": "object",
+      "required": ["dir", "syncLog", "hookLog"],
+      "additionalProperties": false,
+      "properties": {
+        "dir": {
+          "type": "string",
+          "description": "The dashboard app directory, relative to the repository root."
+        },
+        "syncLog": {
+          "type": "string",
+          "description": "Append-only record of which ledger entries have been published, keyed by entry id. Lives in the repo; never edited by hand."
+        },
+        "hookLog": {
+          "type": "string",
+          "description": "Where the session hooks report a skipped sync. Deliberately OUTSIDE the repository — a hook that cannot find the repo must still be able to say so."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "root": {
+      "type": "object",
+      "required": ["path", "sentinel"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Directory relative to the repository root. \".\" is the root itself."
+        },
+        "sentinel": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A path inside `path` that must exist. \".\" means the directory's own existence is the check."
+        }
+      }
+    }
+  }
+}

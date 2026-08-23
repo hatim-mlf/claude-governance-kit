@@ -1,0 +1,18 @@
+{
+  "$schema": "./governance.config.schema.json",
+  "projectName": "YOUR PROJECT NAME",
+  "projectShortName": "yourproject",
+  "tracker": "reports/bugs reports/BUG_TRACKER.md",
+  "roots": {
+    "repository": { "path": ".", "sentinel": "CLAUDE.md" },
+    "reports":    { "path": "reports", "sentinel": "bugs reports/BUG_TRACKER.md" },
+    "ledger":     { "path": "ledger",  "sentinel": "README.md" },
+    "docs":       { "path": "docs",    "sentinel": "." },
+    "source":     { "path": "src",     "sentinel": "." }
+  },
+  "dashboard": {
+    "dir": "bug-tracker-dashboard/app",
+    "syncLog": "ledger/SYNC_LOG.tsv",
+    "hookLog": "~/.claude/yourproject-session-end-sync.log"
+  }
+}

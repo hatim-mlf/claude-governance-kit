@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "# Find the repository from the session, then hand off to the script that owns the\n# rest. Two candidates, in order of trustworthiness. If neither resolves, SAY SO —\n# a session-end step that skips in silence is how a dashboard goes stale without a\n# word. Always exit 0: a missed sync is recoverable, a failed session end is not.\nfor d in \"${CLAUDE_PROJECT_DIR:-}\" \"$(git -C \"$PWD\" rev-parse --show-toplevel 2>/dev/null)\"; do\n  [ -x \"$d/scripts/dashboard-sync.sh\" ] && exec \"$d/scripts/dashboard-sync.sh\"\ndone\nprintf '%s  SKIPPED — no governed repository found (CLAUDE_PROJECT_DIR=%s, PWD=%s), so scripts/dashboard-sync.sh never ran. Dashboard NOT synced.\\n' \\\n  \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" \"${CLAUDE_PROJECT_DIR:-unset}\" \"$PWD\" \\\n  >> \"$HOME/.claude/session-end-sync.log\" 2>&1\nexit 0",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "# Per-turn dashboard sync. Same script as SessionEnd, with --turn, which makes it\n# quiet on the no-op path — it runs after every assistant turn, so a line per turn\n# saying \"nothing new\" would drown the log it writes to.\n#\n# $CLAUDE_PROJECT_DIR is fixed when the session starts and goes stale if the\n# repository moves mid-session. The script re-derives the root from its own\n# location regardless; this only has to find the script.\n#\n# Always exits 0. A missed sync costs one `npm run sync`; a Stop hook that exits\n# non-zero blocks the turn, which is not recoverable by the person waiting for it.\nfor d in \"${CLAUDE_PROJECT_DIR:-}\" \"$(git -C \"$PWD\" rev-parse --show-toplevel 2>/dev/null)\"; do\n  [ -x \"$d/scripts/dashboard-sync.sh\" ] && exec \"$d/scripts/dashboard-sync.sh\" --turn\ndone\nexit 0",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

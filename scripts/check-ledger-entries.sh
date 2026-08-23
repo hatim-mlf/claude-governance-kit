@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+#
+# Ledger entry check — claude-governance-kit.
+#
+# WHAT IT IS FOR
+#   Ledger timestamps and the `Verified by:` field are prose. Nothing rejects a
+#   wrong one, and a fabricated timestamp is worse than a missing one because it
+#   reads as evidence and gets cited by other documents. The method: compare an
+#   entry's stamps against something real. Three of the four checks here need
+#   nothing external, because an entry's own stamps and its neighbours already
+#   contradict a fabrication most of the time:
+#
+#     T1  closed is not in the future
+#     T2  closed is not before this entry's own reserved
+#     T3  reserved is not before the previous entry's closed
+#     V1  a closed entry states how it was verified, and a build alone is not it
+#
+#   T3 is the one that earns its keep. Reserving and closing happen at different
+#   moments, often in different sessions, so a stamp invented for one entry is
+#   very likely to collide with a real stamp on a neighbour.
+#
+# WHY IT WARNS AND NEVER BLOCKS
+#   A wrong stamp is worth a nudge and is never worth refusing a commit over —
+#   and a gate that blocks legitimate work gets bypassed until it means nothing.
+#   The one thing that blocks here is a credential, and it stays that way.
+#
+# WHY IT DOES NOT PARSE DATES
+#   Comparisons are lexical on "YYYY-MM-DD HH:MM", which is correct as long as
+#   two stamps share a UTC offset. Mixed offsets are reported rather than
+#   compared, because `date -j -f` is macOS-only and `date -d` is GNU-only, and
+#   a check that runs on one machine is the failure mode this file exists to
+#   avoid. Travel across a timezone is rare; getting it silently wrong is not.
+#
+# TWO MODES, AND WHY
+#   --staged   report only entries this commit adds or edits. This is what the
+#              pre-commit hook runs. Relitigating the whole history on every
+#              commit would print the same historical findings forever, and a
+#              warning you have already decided to ignore trains you to ignore
+#              the next one.
+#   (default)  report every entry in the week file. This is the audit mode; run
+#              it by hand when you want the whole picture.
+#
+# USAGE
+#   scripts/check-ledger-entries.sh [--staged] [week-file]
+#   Defaults to the current ISO week. Exit 1 means findings, printed to stdout.
+#
+set -uo pipefail
+
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "Ledger entry check DID NOT RUN — not inside a git repository."
+  exit 1
+}
+
+staged_only=0
+if [ "${1:-}" = "--staged" ]; then staged_only=1; shift; fi
+
+week_file="${1:-${root}/ledger/$(date +%G-W%V).md}"
+
+if [ ! -f "$week_file" ]; then
+  echo "Ledger entry check DID NOT RUN — no file at ${week_file}"
+  echo "  A check that quietly stops running is worse than one that never ran."
+  exit 1
+fi
+
+# In staged mode, the ids worth reporting are the ones this commit touches.
+# Anything else in the file is history, and history is the audit mode's job.
+touched_ids=""
+if [ $staged_only -eq 1 ]; then
+  rel="${week_file#$root/}"
+  git diff --cached --quiet -- "$rel" 2>/dev/null && exit 0
+  # Only ids introduced as an entry HEADING. Matching every id in the added lines
+  # picked up ids merely *cited* in prose — a closing block that says "this found
+  # conflicts in 2026-W34-16" made the check report entry 16, which this commit did
+  # not touch. Citing an entry is not editing it.
+  touched_ids="$(git diff --cached -U0 -- "$rel" 2>/dev/null \
+    | grep -oE '^\+## [0-9]{4}-W[0-9]{2}-[0-9]{2}' \
+    | sed 's/^+## //' | sort -u | tr '\n' ' ')"
+  # An edit that adds no heading and no id still belongs to the entry it sits
+  # in. Falling back to every id in the file would be noisy; reporting nothing
+  # would be silent. Take the last entry in the file, which is where an
+  # in-progress closing block always lands.
+  if [ -z "$touched_ids" ]; then
+    touched_ids="$(grep -oE '^## [0-9]{4}-W[0-9]{2}-[0-9]{2}' "$week_file" | tail -1 | sed 's/^## //')"
+  fi
+fi
+
+now_stamp="$(date +'%Y-%m-%d %H:%M')"
+now_offset="$(date +'%z')"
+
+findings="$(
+  awk -v now="$now_stamp" -v now_off="$now_offset" -v only="$touched_ids" '
+    function stamp(line,   s) {
+      # "**Reserved:** 2026-08-22 16:12 +0100" -> "2026-08-22 16:12"
+      if (match(line, /[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}/))
+        return substr(line, RSTART, RLENGTH)
+      return ""
+    }
+    function offset(line) {
+      if (match(line, /[-+][0-9]{2}:?[0-9]{2}[ ]*$/)) {
+        s = substr(line, RSTART, RLENGTH); gsub(/[ :]/, "", s); return s
+      }
+      return ""
+    }
+    function report(id, msg) {
+      # In staged mode `only` is a space-separated allowlist of ids.
+      if (only != "" && index(" " only " ", " " id " ") == 0) return
+      print "  " id ": " msg; found = 1
+    }
+
+    function flush(   ) {
+      if (id == "") return
+
+      # T2 — closed before its own reserved
+      if (closed != "" && reserved != "" && r_off == c_off && closed < reserved)
+        report(id, "closed " closed " is BEFORE its own reserved " reserved)
+
+      # T1 — closed in the future
+      if (closed != "" && c_off == now_off && closed > now)
+        report(id, "closed " closed " is in the FUTURE (now " now ")")
+
+      # T3 — reserved before the previous entry closed
+      if (reserved != "" && prev_closed != "" && r_off == prev_c_off && reserved < prev_closed)
+        report(id, "reserved " reserved " is BEFORE " prev_id " closed " prev_closed)
+
+      # mixed offsets: report, never compare
+      if (reserved != "" && closed != "" && r_off != "" && c_off != "" && r_off != c_off)
+        report(id, "reserved and closed carry different UTC offsets (" r_off " vs " c_off ") — not compared")
+
+      # V1 — a closed entry must say how it was verified
+      if (status_closed) {
+        if (!has_verified)
+          report(id, "closed with NO \"Verified by:\" field")
+        else if (verified_weak)
+          report(id, "\"Verified by:\" cites only a build or a compile — a build succeeding is not a verification")
+      }
+
+      if (closed != "") { prev_closed = closed; prev_c_off = c_off; prev_id = id }
+    }
+
+    /^## / {
+      flush()
+      id = substr($0, 4); sub(/ .*/, "", id)
+      reserved = ""; closed = ""; r_off = ""; c_off = ""
+      status_closed = 0; has_verified = 0; verified_weak = 0; in_verified = 0
+      next
+    }
+    /^\*\*Reserved:\*\*/  { reserved = stamp($0); r_off = offset($0); in_verified = 0; next }
+    /^### Closed —/       { closed   = stamp($0); c_off = offset($0); in_verified = 0; next }
+    /^\*\*Status:\*\*/    { if ($0 ~ /Closed/) status_closed = 1; in_verified = 0; next }
+
+    /^\*\*Verified by:\*\*/ {
+      has_verified = 1; in_verified = 1
+      body = $0
+      if (body ~ /[Nn]ot verified/) { verified_weak = 0; in_verified = 0; next }
+      # A build or a compile, with nothing else named alongside it.
+      if (body ~ /[Bb]uild|[Cc]ompile/ &&
+          body !~ /test|Test|capture|scenario|\.md|\.swift|\.py|\.ts|\.png|\.mov|\.json|diff|`/)
+        verified_weak = 1
+      next
+    }
+    in_verified && /^\*\*/ { in_verified = 0 }
+    in_verified {
+      # continuation lines can supply the evidence the first line lacked
+      if ($0 ~ /test|Test|capture|scenario|\.md|\.swift|\.py|\.ts|\.png|\.mov|\.json|diff|`/) verified_weak = 0
+    }
+
+    END { flush(); exit (found ? 1 : 0) }
+  ' "$week_file"
+)"
+status=$?
+
+if [ -n "$findings" ]; then
+  echo "Ledger entries need a look — $(basename "$week_file")"
+  echo "$findings"
+  echo
+  echo "  Read stamps off the machine, never from session context:"
+  echo "    date +\"%Y-%m-%d %H:%M %z\""
+  echo "  A fabricated timestamp reads as evidence."
+  exit 1
+fi
+
+exit "$status"
