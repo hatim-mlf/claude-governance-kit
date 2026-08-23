@@ -72,6 +72,45 @@ The optional `modules/swift-xcode/swift-xcode-audit/` skill is also written-here
 outside this directory on purpose: it is toolchain-specific, so it is not part of the
 core kit and does not appear in the catalog until you install it.
 
+## Adding a skill — the approved sources
+
+Two repositories are **pre-approved**; vendor from them and record the commit SHA here:
+
+- [`affaan-m/ECC`](https://github.com/affaan-m/ECC)
+- [`mattpocock/skills`](https://github.com/mattpocock/skills)
+
+**Anywhere else is allowed, but must record its source and its licence in this file before
+the skill is used.** A skill runs with the same permissions as the session that reaches
+it, so an unrecorded one is an unreviewed dependency with write access to the repository.
+Writing a skill here from scratch is always fine — record it in the *Written here* table
+above.
+
+The obligation is enforced by `.claude/rules/skills-stay-indexed.md`, and checked by the
+catalog generator described below.
+
+## Why vendored and not installed as a plugin
+
+Installing an upstream skill set as a plugin bundle ships **all** of its skills as a
+read-only unit. Upstream's `handoff`, `triage` and `code-review` would then sit in the
+model's reach alongside this kit's `session-report`, `session-prompt` and
+`project-code-review`, giving the agent two answers to the same trigger and no way to
+tell which one this repository meant. Copies in git are auditable, reviewable in a diff,
+and removable with `git rm`.
+
+## Placement
+
+These sit in `.claude/skills/` at the repository root, and must stay **outside** any
+directory your build tool copies wholesale into a bundle.
+
+The originating project learned this as a build failure: five `SKILL.md` files were placed
+inside an Xcode synchronized root group, all five resolved to the same destination path,
+and the build died with `Multiple commands produce`. The class is not Xcode's — any
+tool with a "copy this whole directory into the output" step will collapse identically
+named files the same way.
+
+**Before adding skills, check where your build tool's copy roots point**, and keep
+`.claude/` out of them. It is a one-time check that costs a minute and a build otherwise.
+
 ## Keeping this file honest
 
 `<dashboard>/scripts/generate-skills-catalog.mjs` reads the three tables above and

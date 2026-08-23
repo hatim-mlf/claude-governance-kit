@@ -118,6 +118,23 @@ Invariants that only matter when a specific kind of file is touched live in
 `.claude/rules/`, path-scoped, so they load when that code is opened instead of on
 every session. See `.claude/rules/README.md` for how to add one.
 
+**Two of them govern the governance system itself**, and ship with this kit:
+
+- `skills-stay-indexed.md` — a skill records where it came from in
+  `.claude/skills/UPSTREAM.md`, and the catalog is generated rather than hand-kept.
+  [`affaan-m/ECC`](https://github.com/affaan-m/ECC) and
+  [`mattpocock/skills`](https://github.com/mattpocock/skills) are pre-approved sources;
+  anywhere else is allowed once its source and licence are recorded. A skill runs with
+  the session's permissions, so an unrecorded one is an unreviewed dependency with write
+  access to this repository.
+- `governance-changes-reach-the-kit.md` — a change to a rule, skill, script or the ledger
+  format is mirrored back into the governance kit in the same session, so other projects
+  do not inherit a version this one has already moved past.
+
+The rest are yours: an invariant about your own types, tables or subsystems belongs
+here, and does **not** get mirrored to the kit. The test that separates them is in
+`governance-changes-reach-the-kit.md`.
+
 ## Enforcement
 
 **A rule that nothing checks is a wish. A check that blocks legitimate work gets

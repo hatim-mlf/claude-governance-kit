@@ -45,8 +45,8 @@ it. If it only makes sense next to one of your own modules, leave it where it is
 
 ## What "mirror" means today
 
-the governance kit (`governance.config.json` names its path) is a git repository with **no commits and no remote** as
-of 2026-08-23 — it is still being built by a separate session. So:
+the governance kit (`governance.config.json` names its path) is a git repository with **one commit and no
+remote** as of 2026-08-23 — the extraction landed, the publishing decision has not. So:
 
 1. **Copy the change into the kit**, parameterised. Project-specific names, paths and bug
    numbers become placeholders; the mechanism survives, the content does not.
