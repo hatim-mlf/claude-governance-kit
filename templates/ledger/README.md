@@ -1,6 +1,31 @@
 # Ledger
 
-An append-only execution log. One file per ISO week: `YYYY-Www.md` — `2026-W33.md`.
+An append-only execution log. **One folder per ISO week, one file per day inside it:**
+
+```
+ledger/
+  2026-W34/
+    README.md        generated index — do not hand-edit
+    2026-08-17.md
+    …
+    2026-08-23.md
+  2026-W35/
+```
+
+**Ids stay week-scoped and sequential across the whole week** — `2026-W34-70`, not
+`2026-08-23-04`. That is what makes the split safe: a citation names an id, never a path,
+so every id cited across the repository survives the layout change untouched. Find an entry
+with `grep -rn 2026-W34-70 ledger/` rather than by guessing its day.
+
+**Why days.** A busy week's single file passes several thousand lines within a month — one
+file nobody can open, read, or diff usefully. Split by day it stays in the hundreds.
+
+Regenerate a week's index after adding a day:
+
+```bash
+scripts/generate-ledger-index.sh            # every week
+scripts/generate-ledger-index.sh 2026-W35   # one week
+```
 
 Get the week from the machine, not from memory:
 
@@ -47,7 +72,8 @@ once:
 scripts/next-ledger-id.sh
 ```
 
-Append to the current week's file:
+Append to **today's file** in the current week's folder —
+`ledger/$(date +%G-W%V)/$(date +%F).md`, creating it if this is the day's first entry:
 
 ```markdown
 ## YYYY-Www-NN — Fix cursor not advancing after scoped purge
@@ -138,9 +164,10 @@ block until the next `**Bold:**` heading.
 
 ## Rules that keep it trustworthy
 
-**A task's whole lifecycle lives in the week it was opened in.** A task opened in
-W33 that finishes in W34 is closed in `2026-W33.md`. Do not re-open it in the new
-week's file, and do not move it.
+**A task's whole lifecycle lives in the day it was opened in.** A task opened on one day
+that finishes on another — or in the following week — is closed in the file where it
+started. Do not re-open it in today's file, and do not move it. The closing block's own
+`### Closed —` stamp carries the real finish time, so nothing is lost.
 
 **Past weeks are not edited retroactively** — the one exception being closing an
 entry that was still open. No fixing typos, no adding forgotten entries, no

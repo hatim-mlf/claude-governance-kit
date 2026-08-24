@@ -20,7 +20,7 @@ then the definition a new contributor would need.
 
 | Term | Definition |
 |---|---|
-| ledger entry | One task's reserved→closed lifecycle in `ledger/YYYY-Www.md` |
+| ledger entry | One task's reserved→closed lifecycle in `ledger/YYYY-Www/YYYY-MM-DD.md` |
 | row | A numbered tracker bug or a lettered register entry |
 | report | A Markdown file under `reports/`, written with its skill |
 | verified | A fix with named evidence attached — a capture, a test run, a scenario |

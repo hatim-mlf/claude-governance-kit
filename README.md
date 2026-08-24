@@ -58,7 +58,7 @@ flowchart TD
     end
 
     subgraph Repo["Governed repository"]
-        L["ledger/YYYY-Www.md<br/>reserve → close, with evidence"]
+        L["ledger/YYYY-Www/YYYY-MM-DD.md<br/>reserve → close, with evidence"]
         R["reports/{bugs,errors,audits,sessions}"]
         T["BUG_TRACKER.md + STRUCTURAL_PROBLEMS.md"]
         C["governance.config.json"]

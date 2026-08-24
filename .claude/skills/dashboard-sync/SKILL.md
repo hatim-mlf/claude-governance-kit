@@ -74,7 +74,8 @@ a claim recorded as unverified. Routine completed work is `no`.
 The hooks run `scripts/dashboard-sync.sh`, which runs
 `bug-tracker-dashboard/app/scripts/sync-dashboard.mjs`, which:
 
-1. Parses every `ledger/YYYY-Www.md` into entries.
+1. Parses every `ledger/YYYY-Www/YYYY-MM-DD.md` into entries — one folder per ISO week,
+   one file per day, ids week-scoped.
 2. Compares them against `ledger/SYNC_LOG.tsv`, keyed on **entry ID *and* status**.
 3. Fingerprints every watched source file — path, size and mtime — and compares that
    against `.sync-state.json` from the last run.
