@@ -56,6 +56,35 @@ Transform tasks into verifiable goals:
 
 ---
 
+## 5. A Stop Gate Is Not Yours to Lift
+
+**When a prompt, a row, or a skill says "stop and report" on a condition, and that
+condition fires — stop. Report. Wait.** Not "stop unless the fix looks obvious." Not "stop
+unless you can see it is contained." The gate exists because someone decided in advance
+that this specific call was not the session's to make, and by the time you meet it you are
+the least positioned to re-judge that: you are mid-task, you have a plan, and continuing is
+cheaper than pausing.
+
+**This applies most to a gate you wrote yourself.** The failure that produced this rule:
+a session prompt named a specific collision as a stop condition, the collision happened,
+and the session judged the fix obvious, folded it into its plan before starting, and told
+the operator only after implementing. The fix was sound and not optional — and that is the
+point: **soundness is not the test.** The gate did not ask whether the fix was good, it
+asked who decides.
+
+Three specific traps:
+
+- **"It is required, so it is not a decision."** If the work cannot proceed without it, that
+  is *more* reason to surface it, not less — it means the gate found a real fork.
+- **"I will mention it when I report at the end."** Telling the operator after the code is
+  written is not reporting, it is announcing.
+- **"The gate was written for something bigger than what happened."** Possibly true. Say so
+  and let the operator re-scope it. A gate that turns out too wide gets narrowed by the
+  person who set it, not stepped over by the person who met it.
+
+**What stopping actually costs:** one message. Hand back the finding with its evidence, the
+options with their costs, and a recommendation. What you want back is a choice.
+
 ## Reporting, Ledger, and Model Selection
 
 - On finding a defect in app or tooling behaviour, use the **bug-report** skill.
