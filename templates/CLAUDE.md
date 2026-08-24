@@ -95,8 +95,8 @@ options with their costs, and a recommendation. What you want back is a choice.
 - On the dashboard looking stale, or a report not appearing on it, use the
   **dashboard-sync** skill. Routine syncing is automatic — a `SessionEnd` hook does it.
 
-**Before starting any task, reserve a ledger entry** in the current ISO week's file
-under `ledger/`, and append its closing block when the task ends. Do not work without
+**Before starting any task, reserve a ledger entry** in today's file under the current
+ISO week's folder — `ledger/$(date +%G-W%V)/$(date +%F).md`, and append its closing block when the task ends. Do not work without
 an open entry. Format and rules: `ledger/README.md`.
 
 **Get the id from the file, never from memory or from context** — run
