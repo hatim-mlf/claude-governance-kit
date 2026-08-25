@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { Pagination, usePagination } from '@/components/ui/pagination'
+import { SubTabs, type SubTab } from '@/components/ui/sub-tabs'
 import {
-  AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, CircleDot, Clock,
+  AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, CircleDot,
   Cpu, FileSearch, Files, PauseCircle, ScrollText, Search, X,
 } from 'lucide-react'
 import { ledgerEntries, ledgerStats, type LedgerEntry } from '@/data/ledgerCatalog'
@@ -287,6 +289,16 @@ const ledgerSortOptions = [
 ] as const
 
 type LedgerSort = (typeof ledgerSortOptions)[number]['value']
+type LedgerSection = 'all' | 'open' | 'attention' | 'week'
+
+/** Enough that a page is worth reading, few enough that it is not a scroll. */
+const ENTRIES_PER_PAGE = 15
+
+/** Sits above the list, so keep it short — it must not become the scroll itself. */
+const ATTENTION_PER_PAGE = 5
+
+/** Newest week present, for the "This week" tab — ids are week-qualified and sortable. */
+const latestWeek = ledgerEntries.reduce((newest, entry) => (entry.week > newest ? entry.week : newest), '')
 
 export function LedgerView() {
   const [search, setSearch] = useState('')
@@ -330,20 +342,34 @@ export function LedgerView() {
     [sort],
   )
 
-  const openEntries = orderEntries(filtered.filter((entry) => entry.status === 'open'))
-  const restByWeek = useMemo(() => {
-    const groups = new Map<string, LedgerEntry[]>()
-    for (const entry of filtered) {
-      if (entry.status === 'open') continue
-      const group = groups.get(entry.week)
-      if (group) group.push(entry)
-      else groups.set(entry.week, [entry])
-    }
-    for (const [week, group] of groups) groups.set(week, orderEntries(group))
-    return [...groups.entries()].sort((left, right) => right[0].localeCompare(left[0], 'en'))
-  }, [filtered, orderEntries])
 
   const attentionEntries = ledgerEntries.filter((entry) => entry.needsAttention)
+
+  // Sub-tabs, then pages within them. Paging alone still makes you walk every page to
+  // reach the open entries, which are the ones someone resuming needs.
+  const [section, setSection] = useState<LedgerSection>('all')
+  const sectionTabs: ReadonlyArray<SubTab<LedgerSection>> = [
+    { id: 'all', label: 'All', count: filtered.length },
+    { id: 'open', label: 'In flight', count: filtered.filter((e) => e.status === 'open').length },
+    { id: 'attention', label: 'Needs attention', count: filtered.filter((e) => e.needsAttention).length },
+    { id: 'week', label: 'This week', count: filtered.filter((e) => e.week === latestWeek).length },
+  ]
+
+  const sectionEntries = useMemo(() => {
+    const base =
+      section === 'open' ? filtered.filter((e) => e.status === 'open')
+      : section === 'attention' ? filtered.filter((e) => e.needsAttention)
+      : section === 'week' ? filtered.filter((e) => e.week === latestWeek)
+      : filtered
+    return orderEntries(base)
+  }, [section, filtered, orderEntries])
+
+  const paged = usePagination(sectionEntries, ENTRIES_PER_PAGE)
+
+  // The attention block sits ABOVE the list and rendered every flagged entry, so the tab
+  // still scrolled however well the list below it paged. One screen can have more than one
+  // unpaged region, and fixing the obvious one does not fix the screen.
+  const pagedAttention = usePagination(attentionEntries, ATTENTION_PER_PAGE)
   const hasActiveFilters = Boolean(search || status !== 'all' || attentionOnly || sort !== 'newest')
 
   const clearFilters = () => {
@@ -445,7 +471,7 @@ export function LedgerView() {
             Flagged by the session that closed them. Each one left something a person should look at.
           </p>
           <ul className="mt-3 space-y-2">
-            {attentionEntries.map((entry) => (
+            {pagedAttention.slice.map((entry) => (
               <li key={entry.id} className="rounded-md border border-[#FF6B35]/25 bg-[#141414] p-3">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="font-mono text-xs text-[#FF6B35]">{entry.id}</span>
@@ -457,6 +483,14 @@ export function LedgerView() {
               </li>
             ))}
           </ul>
+          <Pagination
+            page={pagedAttention.page}
+            pageCount={pagedAttention.pageCount}
+            total={pagedAttention.total}
+            perPage={ATTENTION_PER_PAGE}
+            noun="flagged entries"
+            onChange={pagedAttention.setPage}
+          />
         </div>
       )}
 
@@ -534,35 +568,23 @@ export function LedgerView() {
         </div>
       </div>
 
-      {openEntries.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-[#FFD60A]" aria-hidden="true" />
-            <h3 className="text-sm font-semibold text-white">In flight, or stopped</h3>
-            <span className="text-xs text-[#EBEBF599]">
-              {openEntries.length === 1 ? '1 open entry' : `${openEntries.length} open entries`}
-            </span>
-          </div>
-          {openEntries.map((entry) => (
-            <EntryCard key={entry.id} entry={entry} isExpanded={expanded.has(entry.id)} onToggle={() => toggle(entry.id)} />
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SubTabs tabs={sectionTabs} active={section} onChange={setSection} ariaLabel="Ledger sections" />
+      </div>
 
-      {restByWeek.map(([week, weekEntries]) => (
-        <div key={week} className="space-y-3">
-          <div className="flex items-center gap-2">
-            <ScrollText className="h-4 w-4 text-[#EBEBF54D]" aria-hidden="true" />
-            <h3 className="font-mono text-sm font-semibold text-white">{week}</h3>
-            <span className="text-xs text-[#EBEBF599]">
-              {weekEntries.length === 1 ? '1 entry' : `${weekEntries.length} entries`}
-            </span>
-          </div>
-          {weekEntries.map((entry) => (
-            <EntryCard key={entry.id} entry={entry} isExpanded={expanded.has(entry.id)} onToggle={() => toggle(entry.id)} />
-          ))}
-        </div>
-      ))}
+      <div className="space-y-3">
+        {paged.slice.map((entry) => (
+          <EntryCard key={entry.id} entry={entry} isExpanded={expanded.has(entry.id)} onToggle={() => toggle(entry.id)} />
+        ))}
+        <Pagination
+          page={paged.page}
+          pageCount={paged.pageCount}
+          total={paged.total}
+          perPage={ENTRIES_PER_PAGE}
+          noun="entries"
+          onChange={paged.setPage}
+        />
+      </div>
 
       {filtered.length === 0 && (
         <div className="py-12 text-center text-[#EBEBF599]">

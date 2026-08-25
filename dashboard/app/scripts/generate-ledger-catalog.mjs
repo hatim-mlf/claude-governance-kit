@@ -25,7 +25,10 @@ const appDirectory = path.resolve(scriptDirectory, '..')
 const outputPath = path.join(appDirectory, 'src', 'data', 'ledgerCatalog.ts')
 
 // A week file is named 2026-W34.md. README.md and anything else is not a week file.
-const WEEK_FILE = /^\d{4}-W\d{2}\.md$/
+// A week is a FOLDER of daily files. Ids stay week-scoped through that change, so nothing
+// downstream of the parser moves — only discovery.
+const WEEK_DIR = /^\d{4}-W\d{2}$/
+const DAY_FILE = /^\d{4}-\d{2}-\d{2}\.md$/
 // Entry headings are `## 2026-W34-05 — Title`.
 const ENTRY_HEADING = /^##\s+(\d{4}-W\d{2}-\d{2})\s+—\s+(.+?)\s*$/
 // Field lines are `**Name:** value`.
@@ -294,12 +297,22 @@ if (!existsSync(ledgerRoot)) {
   throw new Error(`Ledger root does not exist: ${ledgerRoot}`)
 }
 
-const weekFiles = readdirSync(ledgerRoot)
-  .filter((name) => WEEK_FILE.test(name))
+const weekDirectories = readdirSync(ledgerRoot)
+  .filter((name) => WEEK_DIR.test(name) && statSync(path.join(ledgerRoot, name)).isDirectory())
   .sort((left, right) => left.localeCompare(right, 'en'))
 
-const entries = weekFiles
-  .flatMap((name) => parseWeekFile(path.join(ledgerRoot, name), name.replace(/\.md$/, '')))
+if (weekDirectories.length === 0) {
+  // Loud, not silent: a discovery regex matching nothing would publish an empty ledger
+  // view that looks like a quiet week.
+  throw new Error(`No week folders (YYYY-Www) found under ${ledgerRoot}`)
+}
+
+const entries = weekDirectories
+  .flatMap((week) =>
+    readdirSync(path.join(ledgerRoot, week))
+      .filter((name) => DAY_FILE.test(name))
+      .sort((left, right) => left.localeCompare(right, 'en'))
+      .flatMap((day) => parseWeekFile(path.join(ledgerRoot, week, day), week)))
   // Newest first — the dashboard reads top-down.
   .sort((left, right) => right.id.localeCompare(left.id, 'en'))
 
@@ -347,7 +360,7 @@ export const ledgerStats = ${JSON.stringify({
   openEntries: openEntries.length,
   closedEntries: entries.length - openEntries.length,
   needsAttention: attentionEntries.length,
-  weeks: weekFiles.length,
+  weeks: weekDirectories.length,
   // U-15 and the verification bar. Derived from the entries themselves, never
   // self-reported, and mirrored by scripts/check-ledger-entries.sh at commit time.
   evidenced: entries.filter((e) => e.verification === 'evidenced').length,
@@ -360,7 +373,7 @@ export const ledgerStats = ${JSON.stringify({
 
 writeFileSync(outputPath, generatedSource)
 console.log(
-  `Ledger catalog: ${entries.length} entries across ${weekFiles.length} week file(s) — `
+  `Ledger catalog: ${entries.length} entries across ${weekDirectories.length} week folder(s) — `
   + `${openEntries.length} open, ${attentionEntries.length} needing attention`,
 )
 console.log(`Generated ${path.relative(appDirectory, outputPath)}`)

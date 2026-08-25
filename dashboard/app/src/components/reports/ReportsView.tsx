@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Pagination, usePagination } from '@/components/ui/pagination'
 import { ChevronDown, ChevronRight, Copy, FileSearch, FileText, Files, Search, X } from 'lucide-react'
 import { reports, type ReportFormat, type ReportKind } from '@/data/reports'
 import { reportCatalogStats } from '@/data/reportCatalogStats'
@@ -46,6 +47,8 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024).toFixed(bytes >= 10240 ? 0 : 1)} KB`
 }
 
+const REPORTS_PER_PAGE = 15
+
 export function ReportsView() {
   const [search, setSearch] = useState('')
   const [kind, setKind] = useState<'all' | ReportKind>('all')
@@ -81,6 +84,9 @@ export function ReportsView() {
         )
     }
   }, [filteredReports, sort])
+
+  // 15 per page with numbered pages at the bottom, once the list outgrows one screen.
+  const paged = usePagination(visibleReports, REPORTS_PER_PAGE)
 
   const duplicateCopies = reportCatalogStats.physicalSourceCount - reportCatalogStats.uniqueReportCount
   const hasActiveFilters = Boolean(search || kind !== 'all' || format !== 'all' || sort !== 'newest')
@@ -205,7 +211,7 @@ export function ReportsView() {
       </div>
 
       <div className="space-y-3">
-        {visibleReports.map((report) => {
+        {paged.slice.map((report) => {
           const isExpanded = expandedReports.has(report.id)
           const sourceId = `report-sources-${report.id}`
 
@@ -267,6 +273,15 @@ export function ReportsView() {
             </article>
           )
         })}
+
+        <Pagination
+          page={paged.page}
+          pageCount={paged.pageCount}
+          total={paged.total}
+          perPage={REPORTS_PER_PAGE}
+          noun="reports"
+          onChange={paged.setPage}
+        />
       </div>
 
       {visibleReports.length === 0 && (

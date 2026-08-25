@@ -28,17 +28,20 @@ root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
 }
 
 week="${1:-$(date +%G-W%V)}"
-file="${root}/ledger/${week}.md"
+week_dir="${root}/ledger/${week}"
 
-if [ ! -f "$file" ]; then
-  echo "No file for ${week} yet — create ledger/${week}.md and start at ${week}-01."
+# One folder per ISO week, one file per day inside it. Ids stay week-scoped and
+# sequential across the whole week, so a citation resolves without naming a day —
+# which is what lets the split happen without breaking every reference.
+if [ ! -d "$week_dir" ]; then
+  echo "No folder for ${week} yet — create ledger/${week}/$(date +%F).md and start at ${week}-01."
   exit 0
 fi
 
 # Ids are read off the file, never counted. A deleted entry leaves a gap, and reusing
 # that gap would break every citation pointing at the old occupant — ledger/README.md
 # says ids are never reused, so this takes max+1 rather than the first free slot.
-taken="$(grep -oE "^## ${week}-[0-9]+" "$file" | sed "s|^## ${week}-||" | sort -n)"
+taken="$(cat "${week_dir}"/*.md 2>/dev/null | grep -oE "^## ${week}-[0-9]+" | sed "s|^## ${week}-||" | sort -n)"
 
 if [ -z "$taken" ]; then
   echo "${week}-01"

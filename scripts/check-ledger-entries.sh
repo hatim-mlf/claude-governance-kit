@@ -54,10 +54,28 @@ root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
 staged_only=0
 if [ "${1:-}" = "--staged" ]; then staged_only=1; shift; fi
 
-week_file="${1:-${root}/ledger/$(date +%G-W%V).md}"
+# A week is a folder of daily files. Concatenate them into one stream so the rest of this
+# script is unchanged — entries are week-scoped, so day boundaries do not matter to any
+# check here.
+week_dir="${1:-${root}/ledger/$(date +%G-W%V)}"
 
-if [ ! -f "$week_file" ]; then
-  echo "Ledger entry check DID NOT RUN — no file at ${week_file}"
+# Fall back to the most recent week rather than going dark at every week boundary: this
+# used to require the CURRENT week and stopped running each Monday until someone reserved
+# the week's first entry. A check that quietly stops running is the failure this file is
+# meant to prevent, not to demonstrate.
+if [ ! -d "$week_dir" ]; then
+  fallback="$(ls -d "${root}/ledger/"20*-W* 2>/dev/null | sort | tail -1)"
+  if [ -n "$fallback" ]; then
+    echo "No folder for this ISO week yet — checking the most recent, $(basename "$fallback")."
+    week_dir="$fallback"
+  fi
+fi
+
+week_file="$(mktemp)"; trap 'rm -f "$week_file"' EXIT
+[ -d "$week_dir" ] && cat "${week_dir}"/*.md > "$week_file" 2>/dev/null
+
+if [ ! -s "$week_file" ]; then
+  echo "Ledger entry check DID NOT RUN — no week folder under ${root}/ledger"
   echo "  A check that quietly stops running is worse than one that never ran."
   exit 1
 fi
@@ -66,7 +84,7 @@ fi
 # Anything else in the file is history, and history is the audit mode's job.
 touched_ids=""
 if [ $staged_only -eq 1 ]; then
-  rel="${week_file#$root/}"
+  rel="${week_dir#$root/}"   # the folder — a commit may touch any day inside it
   git diff --cached --quiet -- "$rel" 2>/dev/null && exit 0
   # Only ids introduced as an entry HEADING. Matching every id in the added lines
   # picked up ids merely *cited* in prose — a closing block that says "this found
@@ -189,7 +207,7 @@ if [ -n "$duplicate_ids" ]; then
 fi
 
 if [ -n "$findings" ] || [ -n "$duplicate_report" ]; then
-  echo "Ledger entries need a look — $(basename "$week_file")"
+  echo "Ledger entries need a look — $(basename "$week_dir")"
   [ -n "$duplicate_report" ] && echo "$duplicate_report"
   [ -n "$findings" ] && echo "$findings"
   echo

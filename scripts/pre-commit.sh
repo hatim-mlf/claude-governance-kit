@@ -206,7 +206,12 @@ done
 # to the repository's nesting depth. A broken path becomes a visible warning
 # rather than a check that silently stops running.
 ledger_dir="$(git rev-parse --show-toplevel)/ledger"
-week_file="${ledger_dir}/$(date +%G-W%V).md"
+week_dir="${ledger_dir}/$(date +%G-W%V)"
+# Fall back to the most recent week rather than going dark at every week boundary — the
+# current week's folder does not exist until someone reserves that week's first entry.
+[ -d "$week_dir" ] || week_dir="$(ls -d "${ledger_dir}/"20*-W* 2>/dev/null | sort | tail -1)"
+week_file="$(mktemp)"; trap 'rm -f "$week_file"' EXIT
+[ -n "$week_dir" ] && [ -d "$week_dir" ] && cat "${week_dir}"/*.md > "$week_file" 2>/dev/null
 
 if [ ! -d "$ledger_dir" ]; then
   echo
@@ -215,11 +220,10 @@ if [ ! -d "$ledger_dir" ]; then
   echo "${DIM}  Open entries are not being checked. If the layout moved, fix the"
   echo "  path in scripts/pre-commit.sh rather than leaving this quiet.${OFF}"
   warned=1
-elif [ ! -f "$week_file" ]; then
+elif [ ! -s "$week_file" ]; then
   echo
-  echo "${YEL}Ledger check DID NOT RUN — no file for this ISO week${OFF}"
-  echo "${DIM}  looked for: $(basename "$week_file")${OFF}"
-  echo "${DIM}  in: ${ledger_dir}${OFF}"
+  echo "${YEL}Ledger check DID NOT RUN — no week folder under ledger/${OFF}"
+  echo "${DIM}  looked for: ${ledger_dir}/$(date +%G-W%V)/ and any earlier 20*-W* folder${OFF}"
   warned=1
 else
   stale=$(awk -v today="$(date +%Y-%m-%d)" '

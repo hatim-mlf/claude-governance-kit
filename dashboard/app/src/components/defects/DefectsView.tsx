@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { Pagination, usePagination } from '@/components/ui/pagination'
+import { SubTabs, type SubTab } from '@/components/ui/sub-tabs'
 import { AlertTriangle, BookOpen, Bug, ChevronDown, ChevronRight, Repeat2, Search, ShieldAlert, X } from 'lucide-react'
 import { trackerBugs, registerRows, bugPatterns, projectLessons, bugCatalogStats } from '@/data/bugCatalog'
 import {
@@ -30,6 +32,11 @@ const sortOptions: Array<{ value: TrackerSort; label: string }> = [
 
 const allItems = [...trackerBugs, ...registerRows]
 
+type DefectSection = 'all' | 'open' | 'unverified' | 'verified'
+
+/** Enough that a page is worth reading, few enough that it is not a scroll. */
+const DEFECTS_PER_PAGE = 20
+
 export function DefectsView() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<'all' | TrackerStatus>('all')
@@ -48,7 +55,33 @@ export function DefectsView() {
     [search, status, source, sort],
   )
 
-  const visible = useMemo(() => filterTrackerItems(allItems, filter), [filter])
+  const matching = useMemo(() => filterTrackerItems(allItems, filter), [filter])
+
+  // Sub-tabs, then pages within them. The question people arrive with is "what is still
+  // open", so paging alone would still make them walk every page to find it.
+  const [section, setSection] = useState<DefectSection>('all')
+  const isOpen = (item: (typeof allItems)[number]) => String(item.status).toLowerCase().includes('open')
+  const isUnverified = (item: (typeof allItems)[number]) =>
+    String(item.status).toLowerCase().includes('unverified')
+  const isVerified = (item: (typeof allItems)[number]) =>
+    String(item.status).toLowerCase().includes('verified') && !isUnverified(item)
+
+  const sectionTabs: ReadonlyArray<SubTab<DefectSection>> = [
+    { id: 'all', label: 'All', count: matching.length },
+    { id: 'open', label: 'Open', count: matching.filter(isOpen).length },
+    { id: 'unverified', label: 'Fixed, unverified', count: matching.filter(isUnverified).length },
+    { id: 'verified', label: 'Verified', count: matching.filter(isVerified).length },
+  ]
+
+  const sectioned = useMemo(() => {
+    if (section === 'open') return matching.filter(isOpen)
+    if (section === 'unverified') return matching.filter(isUnverified)
+    if (section === 'verified') return matching.filter(isVerified)
+    return matching
+  }, [section, matching])
+
+  const paged = usePagination(sectioned, DEFECTS_PER_PAGE)
+  const visible = paged.slice
   const hasActiveFilters = Boolean(search || status !== 'all' || source !== 'all' || sort !== 'newest')
 
   const clearFilters = () => {
@@ -227,7 +260,7 @@ export function DefectsView() {
 
         <div className="mt-3 flex min-h-7 items-center justify-between gap-3">
           <p aria-live="polite" className="text-sm text-[#EBEBF599]">
-            <strong className="font-semibold text-white">{visible.length}</strong> of {allItems.length} defects
+            <strong className="font-semibold text-white">{matching.length}</strong> of {allItems.length} defects
           </p>
           {hasActiveFilters && (
             <button
@@ -243,6 +276,8 @@ export function DefectsView() {
       </div>
 
       <div className="space-y-3">
+        <SubTabs tabs={sectionTabs} active={section} onChange={setSection} ariaLabel="Defect sections" />
+
         {visible.map((item) => {
           const statusMeta = TRACKER_STATUS_CONFIG[item.status]
           const isExpanded = expanded.has(item.id)
@@ -335,9 +370,18 @@ export function DefectsView() {
             </article>
           )
         })}
+
+        <Pagination
+          page={paged.page}
+          pageCount={paged.pageCount}
+          total={paged.total}
+          perPage={DEFECTS_PER_PAGE}
+          noun="defects"
+          onChange={paged.setPage}
+        />
       </div>
 
-      {visible.length === 0 && (
+      {sectioned.length === 0 && (
         <div className="rounded-lg border border-[#2C2C2E] bg-[#141414] p-10 text-center text-[#EBEBF599]">
           <p className="text-base font-medium text-white">No defects match these filters</p>
           <p className="mt-1 text-sm">Try a broader search or clear the active filters.</p>
