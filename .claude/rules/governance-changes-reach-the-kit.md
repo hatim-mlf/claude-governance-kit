@@ -71,3 +71,22 @@ sessions collided on an id, four checks in `check-ledger-entries.sh` after six t
 were fabricated, and a `--staged` mode after the first version reported history on every
 commit. Each is a repair another project would otherwise have to discover for itself, the
 same expensive way.
+## The coverage question
+
+A push check proves the mirror *landed*. It cannot prove the mirror was *complete*.
+
+The failure that produced this: a session mirrored a ledger format change — the template
+README, the reserve instruction, the glossary, a skill and a new generator — listed all
+five, pushed cleanly, and passed the completion test. **Four consumers still resolved the
+old path**: the next-id helper, the entry checker, the pre-commit hook and the dashboard's
+catalog generator. The kit documented one layout while its tooling read another. The
+generator was the dangerous one — it would have found zero entries and published an empty
+view, which reads as a quiet week rather than a broken parser.
+
+So before calling a mirror done, ask the coverage question:
+
+> **What reads this thing, and did all of it come too?**
+
+For a format change that means every parser, every path builder, every generator — not just
+the document that describes the format. `grep` the kit for the old shape and expect zero
+hits; a stale reference is the answer to whether you finished.
