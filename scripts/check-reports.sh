@@ -70,7 +70,7 @@ if missing:
 staged = os.popen("git diff --cached --name-only 2>/dev/null").read().split()
 ledger_files = [f for f in staged if re.match(r"ledger/.*\d{4}-\d{2}-\d{2}\.md$", f)]
 
-undeclared, unresolved = [], []
+undeclared, unresolved, mis_closed = [], [], []
 for f in ledger_files:
     if not os.path.exists(f):
         continue
@@ -81,9 +81,29 @@ for f in ledger_files:
             continue
         eid = m.group(1)
         head = block[:1500]
-        if not re.search(r"\*\*(Tracker row|Roadmap row|Session prompt):\*\*", head):
+        # `Register row` is the fourth kind, and was missing until an entry commissioned
+        # by a register row tripped this check. Tooling and process work is commissioned by
+        # a lettered row in `STRUCTURAL_PROBLEMS.md` the same way app work is by a numbered
+        # one in `BUG_TRACKER.md` — this script was itself commissioned that way.
+        if not re.search(r"\*\*(Tracker row|Roadmap row|Register row|Session prompt):\*\*", head):
             undeclared.append(eid)
-        if "### Closed" in block:
+        # --- 3. An entry that finished must say so in the one form the dashboard reads.
+        # `ledger/README.md` makes `### Closed — <timestamp>` authoritative for open vs
+        # closed, and the dashboard sync takes it literally. An entry once closed itself
+        # with a `**Closed:**` field instead: the work was done, committed and reported,
+        # and the board went on showing it as running. The operator found it, not the
+        # system. Everything else in the closing block was present and correct, which is
+        # exactly why prose cannot be the check.
+        looks_finished = re.search(
+            r"^\*\*(Closed|Verified by|Files actually touched|Summary):\*\*", block, re.M)
+        if looks_finished and not re.search(r"^### Closed —", block, re.M):
+            mis_closed.append(f"{eid} (has {looks_finished.group(1)}:, no '### Closed —' heading)")
+
+        # Anchored to line start for the same reason the `Report:` search below is, and
+        # found the same way: it fired on an **open** entry whose prose quoted
+        # `### Closed —` while explaining why another entry had got it wrong. A bare
+        # substring search cannot tell a heading from a mention of one.
+        if re.search(r"^### Closed", block, re.M):
             # Anchored to line start, and the LAST match wins. The first version used a
             # bare search and matched an entry's own prose — a table row quoting
             # "**Report:**" — instead of the real line, and reported a false positive on
@@ -109,6 +129,13 @@ if undeclared:
         f"    {', '.join(undeclared)}\n"
         "    An entry has to say what work it belongs to — that is what makes it a session."
     )
+if mis_closed:
+    problems.append(
+        "Entries that look finished but have no '### Closed —' heading:\n"
+        + "".join(f"    {m}\n" for m in mis_closed)
+        + "    That heading is what the dashboard reads for open vs closed. Without it,\n"
+        + "    finished work goes on showing as in flight. See ledger/README.md."
+    )
 if unresolved:
     problems.append(
         "Closed entries whose Report: does not resolve:\n"
@@ -120,6 +147,6 @@ if problems:
     print("\nReports the system asks for — worth a look")
     for p in problems:
         print(f"  {p}")
-    print("\n  Register row U-31c in the project this came from. Warn only; nothing is blocked.")
+    print("\n  Register row U-31c. Warn only; nothing is blocked.")
 PY
 exit 0

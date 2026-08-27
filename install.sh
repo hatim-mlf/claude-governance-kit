@@ -14,7 +14,7 @@
 #   3. Writes governance.config.json at the target root.
 #   4. Creates the ledger/ and reports/ trees and the current ISO week file.
 #   5. Installs the git pre-commit hook (symlink, relative).
-#   6. Merges the SessionEnd/Stop dashboard-sync hooks into .claude/settings.json
+#   6. Merges the SessionEnd/Stop/PostToolUse sync hooks into .claude/settings.json
 #      when there is one, or writes a fresh one.
 #
 # What it never does: overwrite your CLAUDE.md, delete anything, or run the
@@ -84,7 +84,11 @@ copy_new() {
 echo "Installing claude-governance-kit into $TARGET"
 
 # --- scripts -----------------------------------------------------------------
-for s in pre-commit.sh install-hooks.sh check-ledger-entries.sh next-ledger-id.sh dashboard-sync.sh; do
+# check-reports.sh and ledger-sync-guard.sh were shipped in the kit but absent from this
+# list, so every install got the files and none of them ran. A script nothing installs is
+# the same wish a rule nothing checks is.
+for s in pre-commit.sh install-hooks.sh check-ledger-entries.sh check-reports.sh \
+         next-ledger-id.sh dashboard-sync.sh ledger-sync-guard.sh; do
   copy_new "scripts/$s" "scripts/$s"
 done
 chmod +x "$TARGET"/scripts/*.sh 2>/dev/null || true
@@ -104,12 +108,12 @@ done
 
 # --- hooks (settings.json) ----------------------------------------------------
 if [ -f "$TARGET/.claude/settings.json" ]; then
-  echo "  NOTE: .claude/settings.json exists — merge the SessionEnd/Stop hooks from"
+  echo "  NOTE: .claude/settings.json exists — merge the SessionEnd/Stop/PostToolUse hooks from"
   echo "        $KIT_ROOT/.claude/settings.json by hand (hooks are not auto-merged)."
 else
   mkdir -p "$TARGET/.claude"
   cp "$KIT_ROOT/.claude/settings.json" "$TARGET/.claude/settings.json"
-  echo "  installed:     .claude/settings.json (SessionEnd + Stop sync hooks)"
+  echo "  installed:     .claude/settings.json (SessionEnd + Stop + PostToolUse sync hooks)"
 fi
 
 # --- templates ----------------------------------------------------------------
