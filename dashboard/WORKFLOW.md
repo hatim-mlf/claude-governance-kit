@@ -24,7 +24,8 @@ A fifth generator, `generate-config.mjs`, bridges `governance.config.json` into
 ```text
 <project>/                       # git root; holds governance.config.json
 ├── CLAUDE.md                    # the rules
-├── ledger/                      # one ISO-week file per week + SYNC_LOG.tsv
+├── ledger/YYYY-Www/YYYY-MM-DD.md   # folder per ISO week, file per day
+│   └── ... + SYNC_LOG.tsv       # ledger/README.md is authoritative on the format
 ├── reports/
 │   ├── bugs reports/BUG_TRACKER.md
 │   └── {bugs,errors,audits,sessions,verification}/

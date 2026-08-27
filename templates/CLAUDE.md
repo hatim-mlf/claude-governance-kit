@@ -147,8 +147,15 @@ Invariants that only matter when a specific kind of file is touched live in
 `.claude/rules/`, path-scoped, so they load when that code is opened instead of on
 every session. See `.claude/rules/README.md` for how to add one.
 
-**Two of them govern the governance system itself**, and ship with this kit:
+**Three of them govern the governance system itself**, and ship with this kit. They run in
+that order — place it, index it, mirror it:
 
+- `new-material-is-placed-deliberately.md` — before adding a rule, check, script, skill or
+  section of prose, go back to the system and name where it belongs and why, **before**
+  writing the content. Every piece of a system like this is placed correctly once; the
+  failure is the fifth placement, made late in a session into whatever file was already
+  open. It also carries the step most often skipped: a change to a layout or a count is not
+  finished until every document that states it agrees.
 - `skills-stay-indexed.md` — a skill records where it came from in
   `.claude/skills/UPSTREAM.md`, and the catalog is generated rather than hand-kept.
   [`affaan-m/ECC`](https://github.com/affaan-m/ECC) and
