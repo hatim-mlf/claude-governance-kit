@@ -84,7 +84,13 @@ for f in ledger_files:
         if not re.search(r"\*\*(Tracker row|Roadmap row|Session prompt):\*\*", head):
             undeclared.append(eid)
         if "### Closed" in block:
-            rep = re.search(r"\*\*Report:\*\*\s*(.{0,400})", block, re.S)
+            # Anchored to line start, and the LAST match wins. The first version used a
+            # bare search and matched an entry's own prose — a table row quoting
+            # "**Report:**" — instead of the real line, and reported a false positive on
+            # the very commit that introduced it. A new check that cries wolf once is a
+            # check people learn to scroll past.
+            reps = list(re.finditer(r"^\*\*Report:\*\*\s*(.{0,400})", block, re.S | re.M))
+            rep = reps[-1] if reps else None
             if not rep:
                 unresolved.append(f"{eid} (no Report: line)")
                 continue
