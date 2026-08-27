@@ -27,11 +27,23 @@ written outside the execution log, which is the thing the ledger exists to preve
 - The report file: `reports/bugs/YYYY-MM-DD_<short_slug>.md`
 - The tracker row: `reports/bugs reports/BUG_TRACKER.md`
 
-**Both, in the same pass.** The tracker is the file the dashboard's defect view
-is generated from; a report written without its tracker row is invisible to every
-view that matters, and "I'll add the row after" is how reports go missing. Append
-a new `## Bug N — <title>` section using the numbering already in that file, and
-use its status vocabulary exactly:
+**The tracker row, always. The report file, once the row claims `✅ Fixed, verified`.**
+
+The tracker is the file the release snapshot is reconciled from, so a report written without
+its row is invisible to every view that matters. The report file earns its place at a
+different moment: **verified** asserts that a capture exists, and the report is where that
+capture is named. A verified row with no report is a claim with nowhere to check it.
+
+**This rule was narrowed on 2026-08-27 because the wider one was fiction.** It previously
+read "both, in the same pass" for every row. In the project it came from it had been
+followed **11 times in 73 rows** — nothing checked it, so it read as optional to anyone
+working from the repository rather than from this file. The narrowed rule *is* checked, by
+`scripts/check-reports.sh` in the warn tier: 8 outstanding rows the day it was written,
+against 50 for the old one. **A rule nothing checks is a wish, and a check that fires 50
+times is bypassed by the second commit.**
+
+Writing a report for an unverified or open row is welcome when the diagnosis does not fit a
+row. It is simply not required.
 
 | Status | Bar |
 |---|---|

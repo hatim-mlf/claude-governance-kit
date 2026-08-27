@@ -10,6 +10,21 @@ description: Write the session report for what a working session actually
 
 # Session Report
 
+## When it is due
+
+The usual trigger is "ending, pausing, or handing off a session". **That event does not fire
+in a long thread** — in the project this came from, a session running three days across a
+compaction reached ten ledger entries and six closed bugs with no report until it was asked
+for.
+
+So there is a second trigger, and it is checked rather than remembered: **an ISO week with
+five or more ledger entries wants a session report dated in that week.**
+`scripts/check-reports.sh` warns when the current week passes that line without one. Per
+week, not per entry — 73 of 106 entries had never been cited by a session report, so a
+per-entry rule would fire on almost everything and be ignored.
+
+One report may cover several entries. Cite them all in the header.
+
 ## Where it goes
 
 `reports/sessions/YYYY-MM-DD_<short_slug>.md`

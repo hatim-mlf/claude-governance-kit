@@ -271,6 +271,21 @@ else
   warned=1
 fi
 
+# ------------------------------------------------------------------- reports
+# Warn, never block. The "every bug row gets a report file" rule was followed
+# 11 times in 73 rows in the project this came from, because nothing checked
+# it; and the session-report skill triggers on a session *ending*, which a
+# thread running days across a compaction never does. Both checks are
+# deliberately narrow — the wider versions measured 50 and 73 findings and
+# would have been bypassed on the first commit.
+reports_check="$(git rev-parse --show-toplevel)/scripts/check-reports.sh"
+if [ -x "$reports_check" ]; then
+  if reports_output=$("$reports_check" 2>&1) && [ -n "$reports_output" ]; then
+    echo "${YEL}${reports_output}${OFF}"
+    warned=1
+  fi
+fi
+
 # ------------------------------------------------------------------ optional
 # Project-specific checks (e.g. a database-migration drift check) are opt-in:
 # drop an executable at scripts/check-extra.sh and it runs here, warning only.
