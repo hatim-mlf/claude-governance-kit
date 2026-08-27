@@ -14,7 +14,12 @@
 #   every row needs a report file .................. 50 rows would fire
 #   every ledger entry needs a session report ...... 73 entries would fire
 #   only VERIFIED rows need a report file ........... 8 rows  ← chosen
-#   a week with real activity needs one report ...... 0 weeks ← chosen
+#
+# A calendar-week trigger was tried on 2026-08-27 and withdrawn the same night: the
+# operator called it illogical, and they were right. A session is a piece of work — a bug,
+# a roadmap row, an audit — not an interval. The entry-shape checks below replace it, and
+# they run against STAGED entries only, so they are enforceable from today rather than
+# retroactively correct and ignored.
 #
 # Warn tier. Never blocks: a missing write-up is not a reason to refuse a commit.
 set -uo pipefail
@@ -25,14 +30,9 @@ cd "$ROOT" || exit 0
 TRACKER="reports/bugs reports/BUG_TRACKER.md"
 [ -f "$TRACKER" ] || exit 0
 
-# A week is worth a session report once it has this many closed entries. Chosen so the
-# check is green on a normal week and fires on a thread like 2026-W35's sixteen.
-BUSY_WEEK_ENTRIES="${BUSY_WEEK_ENTRIES:-5}"
+python3 - <<'PY'
+import re, glob, os
 
-python3 - "$BUSY_WEEK_ENTRIES" <<'PY'
-import re, glob, sys, os, datetime
-
-busy = int(sys.argv[1])
 problems = []
 
 # --- 1. A row claiming "Fixed, verified" must cite its evidence in a report file. -------
@@ -58,35 +58,56 @@ if missing:
         "    'Verified' asserts a capture exists. The report is where it is named."
     )
 
-# --- 2. A week with real activity should have a session report. -------------------------
-# Per week, not per entry: 73 of 106 entries have never been cited by one, so a per-entry
-# rule would fire on almost everything. A week is the unit a person actually writes up.
-weeks = {}
-for f in glob.glob("ledger/*/[0-9]*.md") + glob.glob("ledger/[0-9]*.md"):
+# --- 2. Every ledger entry declares why it exists, and how it ended. --------------------
+# Staged entries only, deliberately. The repository holds 107 closed entries; 42 of their
+# `Report:` lines resolve to nothing and 53 never named a session prompt. Warning about all
+# of that would be right in principle and ignored by the second commit. Scoped to what the
+# commit touches, the rule is enforceable from today and the backlog stays visible in
+# U-31c rather than in every commit.
+#
+# A session is a piece of *work*, not an interval — a bug, a roadmap row, an audit. So an
+# entry has to say which, and a closed one has to say where the write-up went.
+staged = os.popen("git diff --cached --name-only 2>/dev/null").read().split()
+ledger_files = [f for f in staged if re.match(r"ledger/.*\d{4}-\d{2}-\d{2}\.md$", f)]
+
+undeclared, unresolved = [], []
+for f in ledger_files:
+    if not os.path.exists(f):
+        continue
     text = open(f, errors="ignore").read()
-    for eid in re.findall(r"^## (\d{4}-W\d{2})-\d+", text, re.M):
-        weeks[eid] = weeks.get(eid, 0) + 1
+    for block in re.split(r"\n(?=## \d{4}-W\d{2}-\d+)", text):
+        m = re.match(r"## (\d{4}-W\d{2}-\d+)", block)
+        if not m:
+            continue
+        eid = m.group(1)
+        head = block[:1500]
+        if not re.search(r"\*\*(Tracker row|Roadmap row|Session prompt):\*\*", head):
+            undeclared.append(eid)
+        if "### Closed" in block:
+            rep = re.search(r"\*\*Report:\*\*\s*(.{0,400})", block, re.S)
+            if not rep:
+                unresolved.append(f"{eid} (no Report: line)")
+                continue
+            paths = re.findall(r"`?((?:reports|docs|prompts)/[^\s`,;)]+\.md)`?", rep.group(1))
+            named_row = re.search(r"\b(Bug \d+[a-z]?|U-\d+[a-z]?|§\d+\.\d+)\b", rep.group(1))
+            if paths:
+                gone = [p for p in paths if not os.path.exists(p)]
+                if gone:
+                    unresolved.append(f"{eid} -> {', '.join(gone)} does not exist")
+            elif not named_row:
+                unresolved.append(f"{eid} (Report: names neither a file nor a row)")
 
-def week_of(path):
-    m = re.search(r"(\d{4})-(\d{2})-(\d{2})", os.path.basename(path))
-    if not m:
-        return None
-    y, mo, d = map(int, m.groups())
-    iso = datetime.date(y, mo, d).isocalendar()
-    return f"{iso[0]}-W{iso[1]:02d}"
-
-reported = {week_of(f) for f in glob.glob("reports/sessions/*.md")}
-reported.discard(None)
-
-# Only the current week is reported on. Weeks already past are history and warning about
-# them forever is how a check stops being read.
-today = datetime.date.today().isocalendar()
-current = f"{today[0]}-W{today[1]:02d}"
-if weeks.get(current, 0) >= busy and current not in reported:
+if undeclared:
     problems.append(
-        f"{current} has {weeks[current]} ledger entries and no session report.\n"
-        "    reports/sessions/YYYY-MM-DD_<slug>.md — see the session-report skill.\n"
-        "    The skill triggers on a session *ending*; a long thread never fires that."
+        "Ledger entries with no Tracker row / Roadmap row / Session prompt:\n"
+        f"    {', '.join(undeclared)}\n"
+        "    An entry has to say what work it belongs to — that is what makes it a session."
+    )
+if unresolved:
+    problems.append(
+        "Closed entries whose Report: does not resolve:\n"
+        + "".join(f"    {u}\n" for u in unresolved)
+        + "    Name a file under reports/ that exists, or the row it was filed as."
     )
 
 if problems:
