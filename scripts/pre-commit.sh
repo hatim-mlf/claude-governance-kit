@@ -271,6 +271,23 @@ else
   warned=1
 fi
 
+# ------------------------------------------------------------ stale blockers
+# Warn, never block. A row that says it is blocked on a register row which has since been
+# RESOLVED is blocked on nothing, and nobody finds out until a session happens to look.
+# Closed rows are exempt: their narrative may name a blocker they once had.
+blockers_check="$(git rev-parse --show-toplevel)/scripts/check-stale-blockers.sh"
+if [ -x "$blockers_check" ]; then
+  if ! blockers_output=$("$blockers_check" 2>&1); then
+    echo
+    echo "${YEL}${blockers_output}${OFF}"
+    warned=1
+  fi
+else
+  echo
+  echo "${YEL}Stale-blocker check DID NOT RUN — scripts/check-stale-blockers.sh missing or not executable${OFF}"
+  warned=1
+fi
+
 # ------------------------------------------------------------------- reports
 # Warn, never block. The "every bug row gets a report file" rule was followed
 # 11 times in 73 rows in the project this came from, because nothing checked
