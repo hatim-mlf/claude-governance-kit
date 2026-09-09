@@ -20,7 +20,8 @@ with `grep -rn 2026-W34-70 ledger/` rather than by guessing its day.
 **Why days.** A busy week's single file passes several thousand lines within a month — one
 file nobody can open, read, or diff usefully. Split by day it stays in the hundreds.
 
-Regenerate a week's index after adding a day:
+Publishing an entry regenerates its own week's index, so the index is normally not
+something you run by hand. Rebuild one directly only when repairing history:
 
 ```bash
 scripts/generate-ledger-index.sh            # every week
@@ -91,6 +92,17 @@ Append to **today's file** in the current week's folder —
 **Status:** 🟡 Open
 ```
 
+Publish the reservation before implementation continues:
+
+```bash
+scripts/publish-ledger-entry.sh YYYY-Www-NN
+```
+
+Success means the week index counts this entry and the exact id appears as `open` in
+both the sync log and the generated dashboard catalog. Runtime hooks are helpful but
+are not proof that this specific reservation was published: they cover one runtime, and
+none of them regenerates the week index.
+
 - **ID** — `<ISO year>-W<week>-NN`, sequential within the week, zero-padded, never
   reused. Week-qualified so a citation from another log is unambiguous without a date
   next to it.
@@ -129,6 +141,13 @@ Deleted: nothing
 and what would verify it.
 
 **Report:** `reports/sessions/2026-08-15_cursor_advance.md`
+```
+
+Then publish the same id again. The command must report it as `closed` before the task
+is considered handed off:
+
+```bash
+scripts/publish-ledger-entry.sh YYYY-Www-NN
 ```
 
 ### `Needs attention:` — set when you close, never later

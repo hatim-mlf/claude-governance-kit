@@ -57,6 +57,15 @@ Two limits, in plain language:
 
 ## Manual fallback
 
+A ledger reservation or closeout goes through the verifier, from the repository root. It
+regenerates the week index, syncs, and then checks that this exact id and status landed:
+
+```bash
+scripts/publish-ledger-entry.sh YYYY-Www-NN
+```
+
+Anything else:
+
 ```bash
 cd bug-tracker-dashboard/app && npm run sync
 ```

@@ -11,13 +11,20 @@ description: How the governance dashboard is kept current from the ledger and re
 
 # Dashboard Sync
 
-**You almost never need to do anything.** A `SessionEnd` hook runs the sync automatically
-when a session ends, and a `Stop` hook runs a quieter variant after every turn. This skill
-exists so the mechanism is legible — to a person, and to any session that has to reason
-about it — and so there is a manual fallback when the hook cannot run.
+**For everything except a ledger entry, you almost never need to do anything.** A
+`SessionEnd` hook runs the sync automatically when a session ends, and a `Stop` hook runs
+a quieter variant after every turn. This skill exists so the mechanism is legible — to a
+person, and to any session that has to reason about it — and so there is a manual fallback
+when the hook cannot run.
 
-It documents the protocol. It does not perform the sync; the hook does that without
-invoking this file.
+**A ledger entry is the exception, and it is not optional.** Reserving or closing one is
+followed by `scripts/publish-ledger-entry.sh <entry-id>`, in every runtime. The hooks live
+in `.claude/settings.json`, so they cover Claude Code and nothing else, and none of them
+regenerates `ledger/<week>/README.md`. A hook that may not have run is not evidence that
+an entry reached the dashboard.
+
+This skill documents the protocol. The verifier and the hooks both invoke the shared sync
+script; reading this file performs nothing.
 
 ## What counts as dashboard-relevant
 
@@ -141,7 +148,16 @@ does not sync and nothing anywhere says so: run `npm run sync` by hand.
 
 ## Manual fallback
 
-From `bug-tracker-dashboard/app`:
+For a ledger reservation or closeout, use the repository-root verifier. It regenerates
+the week index — which no hook does — runs the shared synchronization, and then proves
+the exact id and status reached the week index, the sync log, and the generated catalog:
+
+```bash
+scripts/publish-ledger-entry.sh YYYY-Www-NN
+```
+
+For non-ledger governed changes, or when diagnosing the generator directly, run from the
+dashboard application:
 
 ```bash
 npm run sync              # what the hook runs — safe to run any time

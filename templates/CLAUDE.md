@@ -93,11 +93,19 @@ options with their costs, and a recommendation. What you want back is a choice.
 - On ending, pausing, or handing off a session, use the **session-report** skill.
 - On writing the prompt that will run the next session, use the **session-prompt** skill.
 - On the dashboard looking stale, or a report not appearing on it, use the
-  **dashboard-sync** skill. Routine syncing is automatic — a `SessionEnd` hook does it.
+  **dashboard-sync** skill. Routine syncing is automatic in Claude Code — a `SessionEnd`
+  hook does it — but hooks cover one runtime and never regenerate the week index, so
+  they are not publication evidence.
 
 **Before starting any task, reserve a ledger entry** in today's file under the current
 ISO week's folder — `ledger/$(date +%G-W%V)/$(date +%F).md`, and append its closing block when the task ends. Do not work without
 an open entry. Format and rules: `ledger/README.md`.
+
+**Publish the entry the moment it exists** — run
+`scripts/publish-ledger-entry.sh <entry-id>` immediately after reserving it, and again
+after closing it. It regenerates the week index, syncs the dashboard, and then proves
+that this exact id and status reached all three generated views. An entry nobody can see
+is an entry nobody knew was in flight.
 
 **Get the id from the file, never from memory or from context** — run
 `scripts/next-ledger-id.sh` and take what it prints. More than one session can be

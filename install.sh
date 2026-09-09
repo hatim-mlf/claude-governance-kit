@@ -88,7 +88,8 @@ echo "Installing claude-governance-kit into $TARGET"
 # list, so every install got the files and none of them ran. A script nothing installs is
 # the same wish a rule nothing checks is.
 for s in pre-commit.sh install-hooks.sh check-ledger-entries.sh check-reports.sh \
-         next-ledger-id.sh dashboard-sync.sh ledger-sync-guard.sh; do
+         next-ledger-id.sh generate-ledger-index.sh publish-ledger-entry.sh \
+         dashboard-sync.sh ledger-sync-guard.sh; do
   copy_new "scripts/$s" "scripts/$s"
 done
 chmod +x "$TARGET"/scripts/*.sh 2>/dev/null || true

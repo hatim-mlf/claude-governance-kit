@@ -67,6 +67,7 @@ flowchart TD
     subgraph Enforce["Enforcement"]
         PC["pre-commit hook<br/>blocks secrets · warns on stale ledger"]
         HK["SessionEnd + Stop hooks<br/>.claude/settings.json"]
+        PB["publish-ledger-entry.sh<br/>every runtime · verifies id + status"]
     end
 
     subgraph Dash["bug-tracker-dashboard/app"]
@@ -78,6 +79,8 @@ flowchart TD
     S --> R --> T
     PC -. gates commits .-> Repo
     HK -->|"scripts/dashboard-sync.sh"| G
+    PB -->|"index + sync, then check"| G
+    L --> PB
     L --> G
     R --> G
     T --> G
@@ -89,6 +92,12 @@ The flow: **work is commissioned** by a session prompt, **recorded** in the ledg
 happens, **written up** by the reporting skills, **gated** by the pre-commit hook, and
 **published** to the dashboard automatically at session end (and per turn) — idempotently,
 keyed on what actually changed.
+
+The hooks are a convenience of one runtime. A ledger entry is published deliberately, by
+`scripts/publish-ledger-entry.sh <entry-id>` after reserving it and again after closing
+it: that command regenerates the week index, runs the same sync, and then checks that
+this exact id and status arrived. An entry nobody can see is an entry nobody knew was in
+flight.
 
 ## The design rules that make it work
 
