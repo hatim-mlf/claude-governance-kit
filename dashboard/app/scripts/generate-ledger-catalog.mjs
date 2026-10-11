@@ -30,7 +30,8 @@ const outputPath = path.join(appDirectory, 'src', 'data', 'ledgerCatalog.ts')
 const WEEK_DIR = /^\d{4}-W\d{2}$/
 const DAY_FILE = /^\d{4}-\d{2}-\d{2}\.md$/
 // Entry headings are `## 2026-W34-05 — Title`.
-const ENTRY_HEADING = /^##\s+(\d{4}-W\d{2}-\d{2})\s+—\s+(.+?)\s*$/
+// Two or more digits: a busy week can pass 99 entries.
+const ENTRY_HEADING = /^##\s+(\d{4}-W\d{2}-\d{2,})\s+—\s+(.+?)\s*$/
 // Field lines are `**Name:** value`.
 const FIELD = /^\*\*(.+?):\*\*\s*(.*)$/
 
@@ -91,7 +92,7 @@ function extractPaths(blockLines) {
     }
   }
 
-  return [...found].sort((left, right) => left.localeCompare(right, 'en'))
+  return [...found].sort((left, right) => left.localeCompare(right, 'en', { numeric: true }))
 }
 
 /** `yes — reason` / `no` / absent. Absent means no; see ledger/README.md. */
@@ -299,7 +300,7 @@ if (!existsSync(ledgerRoot)) {
 
 const weekDirectories = readdirSync(ledgerRoot)
   .filter((name) => WEEK_DIR.test(name) && statSync(path.join(ledgerRoot, name)).isDirectory())
-  .sort((left, right) => left.localeCompare(right, 'en'))
+  .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }))
 
 if (weekDirectories.length === 0) {
   // Loud, not silent: a discovery regex matching nothing would publish an empty ledger
@@ -311,10 +312,10 @@ const entries = weekDirectories
   .flatMap((week) =>
     readdirSync(path.join(ledgerRoot, week))
       .filter((name) => DAY_FILE.test(name))
-      .sort((left, right) => left.localeCompare(right, 'en'))
+      .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }))
       .flatMap((day) => parseWeekFile(path.join(ledgerRoot, week, day), week)))
   // Newest first — the dashboard reads top-down.
-  .sort((left, right) => right.id.localeCompare(left.id, 'en'))
+  .sort((left, right) => right.id.localeCompare(left.id, 'en', { numeric: true }))
 
 const openEntries = entries.filter((entry) => entry.status === 'open')
 const attentionEntries = entries.filter((entry) => entry.needsAttention)

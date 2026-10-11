@@ -91,14 +91,14 @@ if [ $staged_only -eq 1 ]; then
   # conflicts in 2026-W34-16" made the check report entry 16, which this commit did
   # not touch. Citing an entry is not editing it.
   touched_ids="$(git diff --cached -U0 -- "$rel" 2>/dev/null \
-    | grep -oE '^\+## [0-9]{4}-W[0-9]{2}-[0-9]{2}' \
+    | grep -oE '^\+## [0-9]{4}-W[0-9]{2}-[0-9]{2,}' \
     | sed 's/^+## //' | sort -u | tr '\n' ' ')"
   # An edit that adds no heading and no id still belongs to the entry it sits
   # in. Falling back to every id in the file would be noisy; reporting nothing
   # would be silent. Take the last entry in the file, which is where an
   # in-progress closing block always lands.
   if [ -z "$touched_ids" ]; then
-    touched_ids="$(grep -oE '^## [0-9]{4}-W[0-9]{2}-[0-9]{2}' "$week_file" | tail -1 | sed 's/^## //')"
+    touched_ids="$(grep -oE '^## [0-9]{4}-W[0-9]{2}-[0-9]{2,}' "$week_file" | tail -1 | sed 's/^## //')"
   fi
 fi
 

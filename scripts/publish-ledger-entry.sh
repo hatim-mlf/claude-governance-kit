@@ -49,7 +49,8 @@ fi
 
 entry_id=$1
 case "$entry_id" in
-    [0-9][0-9][0-9][0-9]-W[0-9][0-9]-[0-9][0-9]) ;;
+    # Two or more digits: a busy week can pass 99 entries.
+    [0-9][0-9][0-9][0-9]-W[0-9][0-9]-[0-9][0-9] | [0-9][0-9][0-9][0-9]-W[0-9][0-9]-[0-9][0-9][0-9]) ;;
     *)
         printf 'Invalid ledger id: %s\n' "$entry_id" >&2
         exit 2
@@ -95,7 +96,7 @@ fi
 entry_file=$matches
 status=$(awk -v id="$entry_id" '
     $0 ~ "^## " id " — " { inside = 1; next }
-    inside && /^## [0-9][0-9][0-9][0-9]-W[0-9][0-9]-[0-9][0-9] — / { exit }
+    inside && /^## [0-9][0-9][0-9][0-9]-W[0-9][0-9]-[0-9][0-9][0-9]* — / { exit }
     inside && /^### Closed — / { closed = 1 }
     END { if (closed) print "closed"; else print "open" }
 ' "$entry_file")
@@ -103,7 +104,7 @@ status=$(awk -v id="$entry_id" '
 "$script_directory/generate-ledger-index.sh" "$week" >/dev/null
 "$script_directory/dashboard-sync.sh" --turn
 
-counted=$(grep -h -c "^## $week-[0-9][0-9] — " "$ledger_root/$week"/[0-9]*.md \
+counted=$(grep -h -c "^## $week-[0-9][0-9][0-9]* — " "$ledger_root/$week"/[0-9]*.md \
     | awk '{ total += $1 } END { print total + 0 }')
 indexed=$(sed -n 's/^\*\*\([0-9][0-9]*\) entries across .*/\1/p' "$week_index")
 if [ "${indexed:-none}" != "$counted" ]; then
