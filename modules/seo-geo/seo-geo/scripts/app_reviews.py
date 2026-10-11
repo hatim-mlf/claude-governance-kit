@@ -55,6 +55,9 @@ def reviews(app_id, country, pages, max_stars):
             entries = [entries]
         entries = [e for e in entries if "im:rating" in e]  # first entry can be the app itself
         if not entries:
+            if page == 1:
+                print("warning: page 1 had no reviews. The app may have none in this storefront, "
+                      "or Apple is throttling (it answers 200 with an empty feed); retry later.", file=sys.stderr)
             break
         for e in entries:
             stars = int(e["im:rating"]["label"])
