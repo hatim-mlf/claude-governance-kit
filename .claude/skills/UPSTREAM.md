@@ -68,9 +68,10 @@ things, and the reason `unrecorded` is a finding rather than a default.
 | `session-prompt/` | The commission for the next session | inherited from the originating project |
 | `dashboard-sync/` | How the dashboard is kept current from the ledger and reports | inherited from the originating project |
 
-The optional `modules/swift-xcode/swift-xcode-audit/` skill is also written-here, and is
-outside this directory on purpose: it is toolchain-specific, so it is not part of the
-core kit and does not appear in the catalog until you install it.
+The optional `modules/swift-xcode/swift-xcode-audit/` and `modules/seo-geo/seo-geo/` skills are
+also written-here, and are outside this directory on purpose: one is toolchain-specific, the other
+only matters to projects with a public website. Neither is part of the core kit, and neither appears
+in the catalog until you install it.
 
 ## Adding a skill — the approved sources
 
