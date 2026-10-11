@@ -115,10 +115,12 @@ flight.
 
 Full description with the diagram rendered: open **`docs/index.html`** in a browser.
 
-## Optional module
+## Optional modules
 
-`modules/swift-xcode/` contains a Swift/Xcode audit skill, kept out of the core kit
-because it is toolchain-specific.
+- `modules/swift-xcode/` contains a Swift/Xcode audit skill, kept out of the core kit
+  because it is toolchain-specific.
+- `modules/seo-geo/` contains an SEO and GEO consultant skill with link-graph, cannibalization
+  and research scripts, plus a project-wrapper template. It is for projects with a public site.
 
 ## Licence
 
