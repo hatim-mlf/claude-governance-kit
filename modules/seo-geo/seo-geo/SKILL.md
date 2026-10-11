@@ -93,9 +93,10 @@ Scripts in `scripts/`, standard-library Python, run with `python3 -I`:
 | Script | Does |
 |---|---|
 | `link_graph.py SITE_DIR [--host H] [--contextual-only] [--ignore /app/]` | Internal link graph of the **built** site: PageRank, inbound and outbound links, click depth, orphans, dead links |
-| `cannibalization.py --site DIR / --keyword-map CSV / --gsc CSV` | Pages competing for one search. Exits 1 when any are found |
+| `cannibalization.py --site DIR [--brand B] / --keyword-map CSV / --gsc CSV` | Pages competing for one search. Exits 1 when any are found |
 | `autocomplete.py SEED… [--lang fr --country fr] [--alphabet]` | Google autocomplete variants and questions, as CSV |
 | `app_reviews.py search TERM` / `reviews APP_ID [--max-stars 3]` | Public App Store reviews, for voice of customer |
+| `test_scripts.py` | Tests for the two graph scripts: run after changing either |
 
 **Free data has limits; say which source a number came from.** Autocomplete and questions give
 vocabulary, not volume. Keyword Planner gives ranges. Search Console after launch is the only

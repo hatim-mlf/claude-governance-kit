@@ -15,5 +15,6 @@ core kit, because many projects have no site to rank.
 2. Copy the template to `<project>/.claude/skills/<project>-seo/SKILL.md`, fill in the
    placeholders, and record it in `.claude/skills/UPSTREAM.md` under *Written here*.
 
-Origin: written in the GLOOD project, ledger `2026-W41-74`, 2026-10-11. The global copy at
-`~/.claude/skills/seo-geo/` is the source; this module mirrors it.
+Origin: written in the GLOOD project, ledger `2026-W41-74`, 2026-10-11. **This module is the source
+of truth**, because it is the versioned copy. Installed copies (such as `~/.claude/skills/seo-geo/`) are
+refreshed from it. Run `python3 -I seo-geo/scripts/test_scripts.py` after changing a script.
