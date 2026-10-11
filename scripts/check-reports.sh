@@ -114,7 +114,12 @@ for f in ledger_files:
             if not rep:
                 unresolved.append(f"{eid} (no Report: line)")
                 continue
-            paths = re.findall(r"`?((?:reports|docs|prompts)/[^\s`,;)]+\.md)`?", rep.group(1))
+            # The tracker's own path has a space in it ("bugs reports"), which the
+            # general pattern stops at and misreads as `reports/BUG_TRACKER.md`, a false
+            # positive on every entry that cites the tracker correctly.
+            paths = re.findall(
+                r"`?(reports/bugs reports/BUG_TRACKER\.md|(?:reports|docs|prompts)/[^\s`,;)]+\.md)`?",
+                rep.group(1))
             named_row = re.search(r"\b(Bug \d+[a-z]?|U-\d+[a-z]?|§\d+\.\d+)\b", rep.group(1))
             if paths:
                 gone = [p for p in paths if not os.path.exists(p)]
