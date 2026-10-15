@@ -12,7 +12,8 @@
 #      dashboard into the target — WITHOUT overwriting files that already exist
 #      (an existing CLAUDE.md is yours; the template lands as CLAUDE.governance.md).
 #   3. Writes governance.config.json at the target root.
-#   4. Creates the ledger/ and reports/ trees and the current ISO week file.
+#   4. Creates the ledger/ and reports/ trees, the current ISO week's folder and today's
+#      day file (ledger/<week>/<date>.md, the layout ledger/README.md defines).
 #   5. Installs the git pre-commit hook (symlink, relative).
 #   6. Merges the SessionEnd/Stop/PostToolUse sync hooks into .claude/settings.json
 #      when there is one, or writes a fresh one.
@@ -170,8 +171,11 @@ else
   # .sync-state.json is this kit checkout's own cache and .DS_Store is Finder noise;
   # copying either hands the target a fingerprint of files it does not have, which
   # makes the first `npm run sync` decide nothing changed and generate nothing.
-  rsync -a --exclude node_modules --exclude dist --exclude .sync-state.json \
-        --exclude .DS_Store "$KIT_ROOT/dashboard/" "$TARGET/bug-tracker-dashboard/"
+  # tar, not rsync: rsync is missing from many Linux images and containers, and an
+  # install that stops half-way leaves a target with scripts but no dashboard.
+  (cd "$KIT_ROOT/dashboard" && tar --exclude node_modules --exclude dist \
+      --exclude .sync-state.json --exclude .DS_Store -cf - .) \
+    | (cd "$TARGET/bug-tracker-dashboard" && tar -xf -)
   echo "  installed:     bug-tracker-dashboard/"
 fi
 
@@ -189,15 +193,20 @@ else
   echo "  installed:     governance.config.json"
 fi
 
-# --- this week's ledger file ---------------------------------------------------
+# --- this week's ledger folder and today's day file ------------------------------
+# One folder per ISO week, one file per day (ledger/README.md). The installer used to
+# write a flat ledger/<week>.md, which no script reads: entries appended there never
+# reached the week index or the dashboard.
 week=$(date +%G-W%V)
-if [ ! -f "$TARGET/ledger/$week.md" ]; then
-  cat > "$TARGET/ledger/$week.md" << EOF
-# Ledger — $week
+day=$(date +%F)
+mkdir -p "$TARGET/ledger/$week"
+if [ ! -f "$TARGET/ledger/$week/$day.md" ]; then
+  cat > "$TARGET/ledger/$week/$day.md" << EOF
+# Ledger — $day
 
 Append-only execution log. Format and rules: \`ledger/README.md\`.
 EOF
-  echo "  created:       ledger/$week.md"
+  echo "  created:       ledger/$week/$day.md"
 fi
 
 # --- gitignore -----------------------------------------------------------------
