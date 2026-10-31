@@ -84,12 +84,13 @@ copy_new() {
 echo "Installing claude-governance-kit into $TARGET"
 
 # --- scripts -----------------------------------------------------------------
-# check-reports.sh and ledger-sync-guard.sh were shipped in the kit but absent from this
-# list, so every install got the files and none of them ran. A script nothing installs is
-# the same wish a rule nothing checks is.
-for s in pre-commit.sh install-hooks.sh check-ledger-entries.sh check-reports.sh \
-         next-ledger-id.sh generate-ledger-index.sh publish-ledger-entry.sh \
-         dashboard-sync.sh ledger-sync-guard.sh; do
+# Every script, by glob. This was a hand-kept list, and it dropped scripts twice:
+# check-reports.sh and ledger-sync-guard.sh first, then check-stale-blockers.sh, which
+# pre-commit calls — so every install reported that check as DID NOT RUN. A script
+# nothing installs is the same wish a rule nothing checks is. tests/test_install.sh
+# asserts every kit script arrives.
+for f in "$KIT_ROOT"/scripts/*.sh; do
+  s=$(basename "$f")
   copy_new "scripts/$s" "scripts/$s"
 done
 chmod +x "$TARGET"/scripts/*.sh 2>/dev/null || true
@@ -170,8 +171,11 @@ else
   # .sync-state.json is this kit checkout's own cache and .DS_Store is Finder noise;
   # copying either hands the target a fingerprint of files it does not have, which
   # makes the first `npm run sync` decide nothing changed and generate nothing.
-  rsync -a --exclude node_modules --exclude dist --exclude .sync-state.json \
-        --exclude .DS_Store "$KIT_ROOT/dashboard/" "$TARGET/bug-tracker-dashboard/"
+  # tar, not rsync: tar ships with every macOS and Linux and rsync does not. An
+  # undeclared rsync stopped the install right here, before the config and the hook.
+  (cd "$KIT_ROOT/dashboard" && tar cf - --exclude node_modules --exclude dist \
+        --exclude .sync-state.json --exclude .DS_Store .) \
+    | (cd "$TARGET/bug-tracker-dashboard" && tar xf -)
   echo "  installed:     bug-tracker-dashboard/"
 fi
 
@@ -189,15 +193,15 @@ else
   echo "  installed:     governance.config.json"
 fi
 
-# --- this week's ledger file ---------------------------------------------------
+# --- this week's ledger folder -------------------------------------------------
+# One folder per ISO week, one file per day inside it (ledger/README.md). The first
+# reservation creates the day file; the folder is what the checks look for. This block
+# once wrote ledger/<week>.md, the retired week-file layout, and the very first ledger
+# check on a fresh install reported "DID NOT RUN".
 week=$(date +%G-W%V)
-if [ ! -f "$TARGET/ledger/$week.md" ]; then
-  cat > "$TARGET/ledger/$week.md" << EOF
-# Ledger — $week
-
-Append-only execution log. Format and rules: \`ledger/README.md\`.
-EOF
-  echo "  created:       ledger/$week.md"
+if [ ! -d "$TARGET/ledger/$week" ]; then
+  mkdir -p "$TARGET/ledger/$week"
+  echo "  created:       ledger/$week/"
 fi
 
 # --- gitignore -----------------------------------------------------------------

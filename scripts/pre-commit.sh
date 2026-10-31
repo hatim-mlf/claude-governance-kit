@@ -207,13 +207,22 @@ done
 # rather than a check that silently stops running.
 ledger_dir="$(git rev-parse --show-toplevel)/ledger"
 week_dir="${ledger_dir}/$(date +%G-W%V)"
-# Fall back to the most recent week rather than going dark at every week boundary — the
-# current week's folder does not exist until someone reserves that week's first entry.
-[ -d "$week_dir" ] || week_dir="$(ls -d "${ledger_dir}/"20*-W* 2>/dev/null | sort | tail -1)"
+# Fall back to the most recent week that holds entries rather than going dark at every
+# week boundary. Same lookup as check-ledger-entries.sh — keep the two in step: folders
+# only (a retired week FILE is not a week), and an empty folder is "no entries yet".
+has_entries() { compgen -G "$1/*.md" > /dev/null; }
+if [ ! -d "$week_dir" ] || ! has_entries "$week_dir"; then
+  week_dir=""
+  for d in $(ls -d "${ledger_dir}/"20*-W*/ 2>/dev/null | sort -r); do
+    has_entries "${d%/}" && { week_dir="${d%/}"; break; }
+  done
+fi
 week_file="$(mktemp)"; trap 'rm -f "$week_file"' EXIT
 [ -n "$week_dir" ] && [ -d "$week_dir" ] && cat "${week_dir}"/*.md > "$week_file" 2>/dev/null
 
-if [ ! -d "$ledger_dir" ]; then
+if [ -d "$ledger_dir" ] && [ -z "$week_dir" ]; then
+  : # A ledger with no entries yet is a project that has not reserved one. Nothing to check.
+elif [ ! -d "$ledger_dir" ]; then
   echo
   echo "${YEL}Ledger check DID NOT RUN — no ledger directory${OFF}"
   echo "${DIM}  looked for: ${ledger_dir}${OFF}"

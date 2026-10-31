@@ -63,11 +63,25 @@ week_dir="${1:-${root}/ledger/$(date +%G-W%V)}"
 # used to require the CURRENT week and stopped running each Monday until someone reserved
 # the week's first entry. A check that quietly stops running is the failure this file is
 # meant to prevent, not to demonstrate.
-if [ ! -d "$week_dir" ]; then
-  fallback="$(ls -d "${root}/ledger/"20*-W* 2>/dev/null | sort | tail -1)"
+#
+# An EMPTY week folder counts as "no entries yet" too: the installer creates one, and so
+# does the first reservation of a week, before anything is written into it. The glob
+# names folders only (trailing slash) — a leftover week FILE from the retired layout is
+# not a week to check.
+has_entries() { compgen -G "$1/*.md" > /dev/null; }
+if [ ! -d "$week_dir" ] || ! has_entries "$week_dir"; then
+  fallback=""
+  for d in $(ls -d "${root}/ledger/"20*-W*/ 2>/dev/null | sort -r); do
+    has_entries "${d%/}" && { fallback="${d%/}"; break; }
+  done
   if [ -n "$fallback" ]; then
-    echo "No folder for this ISO week yet — checking the most recent, $(basename "$fallback")."
+    echo "No entries for this ISO week yet — checking the most recent, $(basename "$fallback")."
     week_dir="$fallback"
+  elif [ -d "${root}/ledger" ] && [ -z "${1:-}" ]; then
+    # A ledger that exists and holds no entries is a project that has not reserved one
+    # yet. Say so — it ran, and found nothing — rather than reporting a broken check.
+    echo "Ledger entry check: no entries reserved yet under ${root}/ledger — nothing to check."
+    exit 0
   fi
 fi
 
