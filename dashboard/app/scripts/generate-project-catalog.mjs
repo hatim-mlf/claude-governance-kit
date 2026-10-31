@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from '
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { repositoryRoot } from './project-paths.mjs'
+import { repositoryRoot, sourceRoot as configuredSourceRoot } from './project-paths.mjs'
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const appDirectory = path.resolve(scriptDirectory, '..')
@@ -15,21 +15,31 @@ const outputPath = path.join(appDirectory, 'src', 'data', 'projectCatalog.ts')
 
 const excludedDirectoryNames = new Set([
   '.git',
+  '.build',
+  '.dart_tool',
+  '.gradle',
+  '.idea',
+  '.pub',
+  '.symlinks',
   'build',
+  'coverage',
   'DerivedData',
+  'Pods',
   'xcuserdata',
   'node_modules',
   'dist',
 ])
 const categories = [
   'App',
-  'Managers',
-  'Models',
-  'Views',
-  'Utilities',
+  'Core',
+  'Domain',
+  'Data',
+  'Presentation',
   'Tests',
-  'Debug',
   'Database',
+  'Curriculum',
+  'Governance',
+  'Platform',
   'Documentation',
   'Assets',
   'Configuration',
@@ -106,6 +116,7 @@ function getKind(displayPath, filename, extension) {
   const normalizedPath = displayPath.toLowerCase()
   if (filename === 'project.pbxproj' || filename === 'project.pbxproj.tmp') return 'Xcode project'
   if (filename === 'Package.resolved') return 'Swift package resolution'
+  if (extension === 'dart') return 'Dart'
   if (extension === 'swift') return 'Swift'
   if (extension === 'sql') return 'SQL'
   if (documentationExtensions.has(extension)) return extension === 'md' ? 'Markdown' : 'Text'
@@ -124,9 +135,11 @@ function getCategory(displayPath, sourceRoot, extension) {
   const lowerParts = parts.map((part) => part.toLowerCase())
   const filename = parts.at(-1)?.toLowerCase() || ''
 
-  if (lowerParts.some((part) => part.includes('test')) || /tests?\.(swift|m|mm)$/.test(filename)) return 'Tests'
-  if (lowerParts.includes('debug') || lowerParts.some((part) => part.includes('diagnostic'))) return 'Debug'
+  if (lowerParts.some((part) => part.includes('test')) || /tests?\.(dart|swift|m|mm)$/.test(filename)) return 'Tests'
   if (lowerParts.includes('supabase') || extension === 'sql') return 'Database'
+  if (lowerParts.includes('curriculum_json') || lowerParts.includes('pipeline')) return 'Curriculum'
+  if (lowerParts.includes('.claude') || lowerParts.includes('ledger') || lowerParts.includes('reports') || filename === 'agents.md' || filename === 'claude.md') return 'Governance'
+  if (lowerParts.includes('android') || lowerParts.includes('ios') || lowerParts.includes('macos') || lowerParts.includes('linux') || lowerParts.includes('windows') || lowerParts.includes('web')) return 'Platform'
   if (
     lowerParts.some((part) => part.endsWith('.xcassets'))
     || lowerParts.some((part) => /icon|logo|previewcontent/.test(part))
@@ -141,11 +154,11 @@ function getCategory(displayPath, sourceRoot, extension) {
     || extension === 'env'
     || filename === 'package.resolved'
   ) return 'Configuration'
-  if (lowerParts.includes('managers')) return 'Managers'
-  if (lowerParts.includes('models')) return 'Models'
-  if (lowerParts.includes('views')) return 'Views'
-  if (lowerParts.includes('utilities')) return 'Utilities'
-  if (/^(app|main|appdelegate|scenedelegate)\.(swift|ts|tsx|js|mjs|py|go|rs)$/.test(filename)) return 'App'
+  if (lowerParts.includes('core')) return 'Core'
+  if (lowerParts.includes('domain')) return 'Domain'
+  if (lowerParts.includes('data')) return 'Data'
+  if (lowerParts.includes('presentation')) return 'Presentation'
+  if (/^(app|main|appdelegate|scenedelegate)\.(dart|swift|ts|tsx|js|mjs|py|go|rs)$/.test(filename)) return 'App'
   return 'Other'
 }
 
@@ -178,12 +191,45 @@ function parseSwift(content) {
   }
 
   return {
+    language: 'Swift',
     imports: [...imports].sort(compareText),
     declarations,
     declarationCount: declarations.length,
     todoFixmeCount: content.match(/\b(?:TODO|FIXME)\b/gi)?.length || 0,
     fatalSignalCount: content.match(/\b(?:fatalError|preconditionFailure)\s*\(/g)?.length || 0,
   }
+}
+
+function parseDart(content) {
+  const imports = new Set()
+  const importPattern = /^\s*(?:import|export)\s+['"]([^'"]+)['"]/gm
+  for (const match of content.matchAll(importPattern)) imports.add(match[1])
+
+  const declarations = []
+  const declarationPattern = /^\s*(?:abstract\s+|base\s+|final\s+|interface\s+|sealed\s+)*(class|mixin|enum|extension|typedef)\s+([A-Za-z_][A-Za-z0-9_]*)/gm
+  for (const match of content.matchAll(declarationPattern)) {
+    declarations.push({ kind: match[1], name: match[2] })
+  }
+
+  return {
+    language: 'Dart',
+    imports: [...imports].sort(compareText),
+    declarations,
+    declarationCount: declarations.length,
+    todoFixmeCount: content.match(/\b(?:TODO|FIXME)\b/gi)?.length || 0,
+    fatalSignalCount: content.match(/\b(?:throw|assert)\b/g)?.length || 0,
+  }
+}
+
+function parseSource(extension, content) {
+  if (extension === 'dart') return parseDart(content)
+  if (extension === 'swift') return parseSwift(content)
+  return null
+}
+
+function isInside(directory, file) {
+  const relative = path.relative(directory, file)
+  return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative))
 }
 
 function isGeneratedPath(displayPath, sourceRoot) {
@@ -200,7 +246,7 @@ function createEntry(absolutePath, root, sourceRoot) {
   const sensitiveMetadataOnly = isSensitivePath(displayPath)
   const extensionSaysBinary = binaryExtensions.has(extension)
   let lineCount = null
-  let swift = null
+  let source = null
   let isBinary = extensionSaysBinary
 
   if (!sensitiveMetadataOnly && !extensionSaysBinary) {
@@ -208,7 +254,7 @@ function createEntry(absolutePath, root, sourceRoot) {
     isBinary = content === null
     if (content !== null) {
       lineCount = countLines(content)
-      if (extension === 'swift') swift = parseSwift(content)
+      source = parseSource(extension, content)
     }
   }
 
@@ -223,12 +269,13 @@ function createEntry(absolutePath, root, sourceRoot) {
     byteSize: stats.size,
     modifiedDate: stats.mtime.toISOString(),
     lineCount,
-    swift,
+    source,
     flags: {
       test: /(^|\/)[^/]*tests?(\/|\.|$)/i.test(displayPath),
       legacy: /(^|[/_. -])(?:legacy|old)(?:[/_. -]|$)/i.test(displayPath),
       binary: isBinary,
       generated: isGeneratedPath(displayPath, sourceRoot),
+      primarySource: isInside(configuredSourceRoot, absolutePath),
       sensitiveMetadataOnly,
     },
   }
@@ -284,12 +331,13 @@ const categoryCounts = Object.fromEntries(categories.map((category) => [category
 const kindCounts = {}
 const extensionCounts = {}
 const importCounts = {}
-const declarationsByKind = { class: 0, struct: 0, enum: 0, actor: 0, protocol: 0 }
-let swiftFileCount = 0
-let physicalSwiftFileCount = 0
-let swiftLineCount = 0
-let swiftImportCount = 0
-let swiftDeclarationCount = 0
+const declarationsByKind = {}
+const languageCounts = {}
+let primarySourceFileCount = 0
+let primarySourceLegacyFileCount = 0
+let primarySourceLineCount = 0
+let primarySourceImportCount = 0
+let primarySourceDeclarationCount = 0
 let todoFixmeCount = 0
 let fatalSignalCount = 0
 
@@ -297,20 +345,22 @@ for (const file of files) {
   categoryCounts[file.category] += 1
   kindCounts[file.kind] = (kindCounts[file.kind] || 0) + 1
   extensionCounts[file.extension] = (extensionCounts[file.extension] || 0) + 1
-  if (!file.swift) continue
+  if (!file.source || !file.flags.primarySource) continue
 
-  physicalSwiftFileCount += 1
-  // Keep explicitly old copies searchable and included in line totals without presenting them as active source files.
-  if (!file.flags.legacy) swiftFileCount += 1
-  swiftLineCount += file.lineCount || 0
-  swiftImportCount += file.swift.imports.length
-  swiftDeclarationCount += file.swift.declarationCount
-  todoFixmeCount += file.swift.todoFixmeCount
-  fatalSignalCount += file.swift.fatalSignalCount
-  for (const importedModule of file.swift.imports) {
+  languageCounts[file.source.language] = (languageCounts[file.source.language] || 0) + 1
+  if (file.flags.legacy) primarySourceLegacyFileCount += 1
+  else primarySourceFileCount += 1
+  primarySourceLineCount += file.lineCount || 0
+  primarySourceImportCount += file.source.imports.length
+  primarySourceDeclarationCount += file.source.declarationCount
+  todoFixmeCount += file.source.todoFixmeCount
+  fatalSignalCount += file.source.fatalSignalCount
+  for (const importedModule of file.source.imports) {
     importCounts[importedModule] = (importCounts[importedModule] || 0) + 1
   }
-  for (const declaration of file.swift.declarations) declarationsByKind[declaration.kind] += 1
+  for (const declaration of file.source.declarations) {
+    declarationsByKind[declaration.kind] = (declarationsByKind[declaration.kind] || 0) + 1
+  }
 }
 
 const ids = new Set(files.map((file) => file.id))
@@ -341,16 +391,17 @@ const snapshot = {
   categoryCounts,
   kindCounts: sortRecord(kindCounts),
   extensionCounts: sortRecord(extensionCounts),
-  swift: {
-    fileCount: swiftFileCount,
-    physicalFileCount: physicalSwiftFileCount,
-    legacyFileCount: physicalSwiftFileCount - swiftFileCount,
-    lineCount: swiftLineCount,
-    importCount: swiftImportCount,
+  primarySource: {
+    path: displayRoot(configuredSourceRoot),
+    languages: sortRecord(languageCounts),
+    fileCount: primarySourceFileCount,
+    legacyFileCount: primarySourceLegacyFileCount,
+    lineCount: primarySourceLineCount,
+    importCount: primarySourceImportCount,
     uniqueImportCount: Object.keys(importCounts).length,
     imports: sortRecord(importCounts),
-    declarationCount: swiftDeclarationCount,
-    declarationsByKind,
+    declarationCount: primarySourceDeclarationCount,
+    declarationsByKind: sortRecord(declarationsByKind),
     todoFixmeCount,
     fatalSignalCount,
   },
@@ -360,10 +411,8 @@ const snapshot = {
 const generatedSource = `// Generated by scripts/generate-project-catalog.mjs. Do not edit manually.
 export type ProjectSourceRoot = 'repository'
 export type ProjectCategory = ${categories.map((category) => `'${category}'`).join(' | ')}
-export type SwiftDeclarationKind = 'class' | 'struct' | 'enum' | 'actor' | 'protocol'
-
-export interface SwiftDeclaration {
-  kind: SwiftDeclarationKind
+export interface SourceDeclaration {
+  kind: string
   name: string
 }
 
@@ -378,9 +427,10 @@ export interface ProjectFileEntry {
   byteSize: number
   modifiedDate: string
   lineCount: number | null
-  swift: null | {
+  source: null | {
+    language: 'Dart' | 'Swift'
     imports: string[]
-    declarations: SwiftDeclaration[]
+    declarations: SourceDeclaration[]
     declarationCount: number
     todoFixmeCount: number
     fatalSignalCount: number
@@ -390,6 +440,7 @@ export interface ProjectFileEntry {
     legacy: boolean
     binary: boolean
     generated: boolean
+    primarySource: boolean
     sensitiveMetadataOnly: boolean
   }
 }
@@ -401,6 +452,6 @@ export const projectCatalog: ProjectFileEntry[] = ${JSON.stringify(files, null, 
 
 writeFileSync(outputPath, generatedSource)
 console.log(
-  `Project catalog: ${files.length} files, ${swiftFileCount} active Swift (${physicalSwiftFileCount} physical) / ${swiftLineCount.toLocaleString('en-US')} lines / ${swiftDeclarationCount} declarations`,
+  `Project catalog: ${files.length} files, ${primarySourceFileCount} active source in ${displayRoot(configuredSourceRoot)} / ${primarySourceLineCount.toLocaleString('en-US')} lines / ${primarySourceDeclarationCount} declarations`,
 )
 console.log(`Generated ${path.relative(appDirectory, outputPath)}`)

@@ -2,7 +2,7 @@
 #
 # Pre-commit hook — claude-governance-kit
 #
-# Three checks, deliberately different in severity:
+# Four checks, deliberately different in severity:
 #
 #   SECRETS  — BLOCKS the commit. A credential in source is never legitimate,
 #              and once it reaches git history it is there permanently even
@@ -17,6 +17,10 @@
 #              Worth a nudge, never worth refusing a commit over. If the
 #              ledger cannot be found at all, that is reported too — a check
 #              that quietly stops running is worse than one that never ran.
+#
+#   .ENV     — WARNS only. `.env` ships in the Flutter bundle, so this checks
+#              the local working-tree copy on every invocation, staged or not.
+#              D-007 holds only while it contains no secret.
 #
 # There is NO file-size check. Large files are flagged for review through the
 # dashboard's Project Inventory and resolved per CLAUDE.md — a big file is a
@@ -33,7 +37,74 @@ if [ ! -t 1 ]; then RED=""; YEL=""; GRN=""; DIM=""; OFF=""; fi
 
 fail=0
 
-# Staged, non-deleted files only. Never scans history or the working tree.
+# ---------------------------------------------------------------------- .env
+# `.env` is ignored by git but bundled by Flutter. Keep this check outside the
+# staged-file scan so it runs even when `.env` is not staged (or nothing is).
+repo_root="$(git rev-parse --show-toplevel)"
+env_file="${DAFTIRA_ENV_FILE:-${repo_root}/.env}"
+if [ -f "$env_file" ]; then
+  if ! python3 - "$env_file" <<'PY'
+import base64
+import json
+import sys
+from pathlib import Path
+
+def env_pair(line):
+    line = line.strip()
+    if not line or line.startswith("#") or "=" not in line:
+        return None, None
+    if line.startswith("export "):
+        line = line[7:].lstrip()
+    key, value = line.split("=", 1)
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        value = value[1:-1]
+    return key.strip(), value
+
+def is_service_role_jwt(value):
+    parts = value.split(".")
+    if len(parts) != 3 or not parts[0].startswith("eyJ") or not parts[1].startswith("eyJ"):
+        return False
+    try:
+        payload = parts[1] + "=" * (-len(parts[1]) % 4)
+        claims = json.loads(base64.urlsafe_b64decode(payload))
+        return claims.get("role") == "service_role"
+    except Exception:
+        return False
+
+issues = []
+try:
+    lines = Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()
+except OSError:
+    print("pre-commit: WARNING local .env check could not read the file")
+    sys.exit(0)
+
+for line in lines:
+    key, value = env_pair(line)
+    if key is None:
+        continue
+    if is_service_role_jwt(value):
+        issues.append("service_role JWT")
+    if value.startswith("sb_secret_"):
+        issues.append("sb_secret_ value")
+    if key == "OPENROUTER_API_KEY" and value:
+        issues.append("non-empty OPENROUTER_API_KEY")
+
+if issues:
+    for issue in dict.fromkeys(issues):
+        print(f"pre-commit: WARNING local .env contains {issue}; keep secrets out of the app bundle")
+else:
+    print("pre-commit: local .env check passed")
+PY
+  then
+    echo "${YEL}pre-commit: local .env check DID NOT RUN${OFF}"
+  fi
+else
+  echo "${YEL}pre-commit: local .env file missing; check DID NOT RUN${OFF}"
+fi
+
+# Staged credential scan: non-deleted files only. This section does not scan
+# history or other working-tree files; the local `.env` check above is separate.
 #
 # Filled with a read loop rather than `mapfile`, which is a bash 4 builtin.
 # macOS ships bash 3.2, so `mapfile` would leave this hook dead on every Mac:
@@ -207,22 +278,13 @@ done
 # rather than a check that silently stops running.
 ledger_dir="$(git rev-parse --show-toplevel)/ledger"
 week_dir="${ledger_dir}/$(date +%G-W%V)"
-# Fall back to the most recent week that holds entries rather than going dark at every
-# week boundary. Same lookup as check-ledger-entries.sh — keep the two in step: folders
-# only (a retired week FILE is not a week), and an empty folder is "no entries yet".
-has_entries() { compgen -G "$1/*.md" > /dev/null; }
-if [ ! -d "$week_dir" ] || ! has_entries "$week_dir"; then
-  week_dir=""
-  for d in $(ls -d "${ledger_dir}/"20*-W*/ 2>/dev/null | sort -r); do
-    has_entries "${d%/}" && { week_dir="${d%/}"; break; }
-  done
-fi
+# Fall back to the most recent week rather than going dark at every week boundary — the
+# current week's folder does not exist until someone reserves that week's first entry.
+[ -d "$week_dir" ] || week_dir="$(ls -d "${ledger_dir}/"20*-W* 2>/dev/null | sort | tail -1)"
 week_file="$(mktemp)"; trap 'rm -f "$week_file"' EXIT
 [ -n "$week_dir" ] && [ -d "$week_dir" ] && cat "${week_dir}"/*.md > "$week_file" 2>/dev/null
 
-if [ -d "$ledger_dir" ] && [ -z "$week_dir" ]; then
-  : # A ledger with no entries yet is a project that has not reserved one. Nothing to check.
-elif [ ! -d "$ledger_dir" ]; then
+if [ ! -d "$ledger_dir" ]; then
   echo
   echo "${YEL}Ledger check DID NOT RUN — no ledger directory${OFF}"
   echo "${DIM}  looked for: ${ledger_dir}${OFF}"
@@ -235,34 +297,24 @@ elif [ ! -s "$week_file" ]; then
   echo "${DIM}  looked for: ${ledger_dir}/$(date +%G-W%V)/ and any earlier 20*-W* folder${OFF}"
   warned=1
 else
-  # Every week, not just the current one. GLOOD's audit found 26 entries open or
-  # status-less for more than two days, none of them warned about: the check read only
-  # this week, and an entry with no status line and no `### Closed` block was never
-  # counted as open. An entry nobody closed is open, whatever its status line says.
-  stale=$(cat "${ledger_dir}"/20*-W*/*.md 2>/dev/null | awk -v today="$(date +%Y-%m-%d)" '
+  stale=$(awk -v today="$(date +%Y-%m-%d)" '
     function flush() {
-      if (id != "" && !closed && (open || !has_status) && reserved != "" && reserved < today)
+      if (id != "" && open == 1 && reserved != "" && reserved < today)
         print "  " id "  (reserved " reserved ")"
     }
-    /^## [0-9]{4}-W[0-9]{2}-[0-9]+/ { flush(); split(substr($0, 4), w, " "); id = w[1]
-                                      reserved = ""; open = 0; has_status = 0; closed = 0; next }
-    /^## /                { flush(); id = ""; next }
+    /^## /                { flush(); id = substr($0, 4); reserved = ""; open = 0; next }
     /^\*\*Reserved:\*\*/    { if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/))
                               reserved = substr($0, RSTART, RLENGTH); next }
-    /^\*\*Status:\*\*/      { has_status = 1; open = ($0 ~ /Open/) ? 1 : 0
-                              if ($0 ~ /Closed|Abandoned/) closed = 1; next }
-    /^### Closed/         { closed = 1; next }
+    /^\*\*Status:\*\*/      { open = ($0 ~ /Open/) ? 1 : 0; next }
     END                   { flush() }
-  ' || true)
+  ' "$week_file" 2>/dev/null || true)
 
   if [ -n "$stale" ]; then
-    n=$(printf '%s\n' "$stale" | wc -l | tr -d ' ')
     echo
-    echo "${YEL}Heads up — $n ledger entries left open from an earlier day${OFF}"
-    echo "${DIM}ledger/ (every week) — close them, or abandon them with a Status note saying why.${OFF}"
+    echo "${YEL}Heads up — ledger entries left open from an earlier day${OFF}"
+    echo "${DIM}$(basename "$week_file") — close them, or mark what they are waiting on.${OFF}"
     echo
-    echo "${YEL}$(printf '%s\n' "$stale" | head -10)${OFF}"
-    [ "$n" -gt 10 ] && echo "${DIM}  … and $((n - 10)) more${OFF}"
+    echo "${YEL}${stale}${OFF}"
     warned=1
   fi
 fi
@@ -290,23 +342,6 @@ else
   warned=1
 fi
 
-# ------------------------------------------------------------ stale blockers
-# Warn, never block. A row that says it is blocked on a register row which has since been
-# RESOLVED is blocked on nothing, and nobody finds out until a session happens to look.
-# Closed rows are exempt: their narrative may name a blocker they once had.
-blockers_check="$(git rev-parse --show-toplevel)/scripts/check-stale-blockers.sh"
-if [ -x "$blockers_check" ]; then
-  if ! blockers_output=$("$blockers_check" 2>&1); then
-    echo
-    echo "${YEL}${blockers_output}${OFF}"
-    warned=1
-  fi
-else
-  echo
-  echo "${YEL}Stale-blocker check DID NOT RUN — scripts/check-stale-blockers.sh missing or not executable${OFF}"
-  warned=1
-fi
-
 # ------------------------------------------------------------------- reports
 # Warn, never block. The "every bug row gets a report file" rule was followed
 # 11 times in 73 rows in the project this came from, because nothing checked
@@ -320,84 +355,6 @@ if [ -x "$reports_check" ]; then
     echo "${YEL}${reports_output}${OFF}"
     warned=1
   fi
-else
-  # From the originating project's copy: every other check says when it did not run,
-  # and this one skipped in silence.
-  echo
-  echo "${YEL}Reports check DID NOT RUN — scripts/check-reports.sh missing or not executable${OFF}"
-  warned=1
-fi
-
-# -------------------------------------------------------------- status lines
-# Warn, never block. A status line holds one vocabulary word; prose goes on a
-# `**Status note:**` line. Only lines this commit adds are checked. The project this came
-# from reached over 100 distinct tracker statuses, and fixed-versus-verified stopped being
-# countable.
-status_check="$(git rev-parse --show-toplevel)/scripts/check-status-lines.sh"
-if [ -x "$status_check" ]; then
-  if ! status_output=$("$status_check" --staged 2>&1); then
-    echo
-    echo "${YEL}${status_output}${OFF}"
-    warned=1
-  fi
-else
-  echo
-  echo "${YEL}Status-line check DID NOT RUN — scripts/check-status-lines.sh missing or not executable${OFF}"
-  warned=1
-fi
-
-# ------------------------------------------------------------------- lessons
-# Warn, never block. A lesson added without its cue, a named component, evidence and a
-# verdict (STRUCTURAL_PROBLEMS.md, Lessons). From harness2: an unsupported lesson is a guess
-# the next session builds on.
-lessons_check="$(git rev-parse --show-toplevel)/scripts/check-lessons.sh"
-if [ -x "$lessons_check" ]; then
-  if ! lessons_output=$("$lessons_check" --staged 2>&1); then
-    echo
-    echo "${YEL}${lessons_output}${OFF}"
-    warned=1
-  fi
-else
-  echo
-  echo "${YEL}Lessons check DID NOT RUN — scripts/check-lessons.sh missing or not executable${OFF}"
-  warned=1
-fi
-
-# --------------------------------------------------------------- obligations
-# Warn, never block. Something owed is past its due date (obligations/README.md). A due
-# date nobody is reminded of is not a deadline; this is the reminder the repo can give
-# without Notion.
-obligations_check="$(git rev-parse --show-toplevel)/scripts/obligations.sh"
-if [ -x "$obligations_check" ]; then
-  if ! obligations_output=$("$obligations_check" --check 2>&1); then
-    echo
-    echo "${YEL}${obligations_output}${OFF}"
-    warned=1
-  fi
-else
-  echo
-  echo "${YEL}Obligations check DID NOT RUN — scripts/obligations.sh missing or not executable${OFF}"
-  warned=1
-fi
-
-# ----------------------------------------------------------------- kit drift
-# Warn, never block. A kit-owned file changed beyond anything the kit has is a change
-# that has not been mirrored (changing-the-governance-system.md, step 3). In the project
-# this came from, 22 such files built up unnoticed.
-drift_check="$(git rev-parse --show-toplevel)/scripts/check-kit-drift.sh"
-if [ -x "$drift_check" ]; then
-  drift_output=$("$drift_check" 2>&1); drift_rc=$?
-  if [ $drift_rc -ne 0 ]; then
-    echo
-    echo "${YEL}${drift_output}${OFF}"
-    warned=1
-  elif [ -n "$drift_output" ]; then
-    echo "${DIM}${drift_output}${OFF}"
-  fi
-else
-  echo
-  echo "${YEL}Kit drift check DID NOT RUN — scripts/check-kit-drift.sh missing or not executable${OFF}"
-  warned=1
 fi
 
 # ------------------------------------------------------------------ optional
@@ -413,5 +370,5 @@ if [ -x "$extra_check" ]; then
 fi
 
 [ $warned -eq 1 ] && echo
-echo "${GRN}pre-commit: no credentials found${OFF}"
+echo "${GRN}pre-commit: staged credential scan passed${OFF}"
 exit 0

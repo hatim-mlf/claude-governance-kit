@@ -1,4 +1,4 @@
-// Generates src/data/ledgerCatalog.ts from ledger/*.md.
+// Generates src/data/ledgerCatalog.ts from ledger/YYYY-Www/YYYY-MM-DD.md.
 //
 // WHY THIS IS A SEPARATE GENERATOR, not a new root on the report catalog.
 //
@@ -18,11 +18,18 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from '
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { repositoryRoot, ledgerRoot, pathAliases } from './project-paths.mjs'
+import { repositoryRoot, ledgerRoot } from './project-paths.mjs'
+import { ledgerTimestampIssues } from '../../../scripts/lib/ledger_timestamps.mjs'
+import { ledgerBlocks } from '../../../scripts/lib/ledger_entry.mjs'
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const appDirectory = path.resolve(scriptDirectory, '..')
-const outputPath = path.join(appDirectory, 'src', 'data', 'ledgerCatalog.ts')
+// Sync stages this catalog until reservation/duplicate validation succeeds.
+const args = process.argv.slice(2)
+if (args.length && (args.length !== 2 || args[0] !== '--output')) {
+  throw new Error('Usage: generate-ledger-catalog.mjs [--output path]')
+}
+const outputPath = args.length ? path.resolve(args[1]) : path.join(appDirectory, 'src', 'data', 'ledgerCatalog.ts')
 
 // A week file is named 2026-W34.md. README.md and anything else is not a week file.
 // A week is a FOLDER of daily files. Ids stay week-scoped through that change, so nothing
@@ -30,7 +37,6 @@ const outputPath = path.join(appDirectory, 'src', 'data', 'ledgerCatalog.ts')
 const WEEK_DIR = /^\d{4}-W\d{2}$/
 const DAY_FILE = /^\d{4}-\d{2}-\d{2}\.md$/
 // Entry headings are `## 2026-W34-05 — Title`.
-// Two or more digits: a busy week can pass 99 entries.
 const ENTRY_HEADING = /^##\s+(\d{4}-W\d{2}-\d{2,})\s+—\s+(.+?)\s*$/
 // Field lines are `**Name:** value`.
 const FIELD = /^\*\*(.+?):\*\*\s*(.*)$/
@@ -69,7 +75,7 @@ function extractExpectedPaths(blockLines) {
       // kind of dropped intent this field is meant to surface.
       if (candidate.includes('*')) continue
       const looksLikePath = candidate.includes('/') || /\.\w{1,5}$/.test(candidate)
-      if (looksLikePath) found.add(canonicalPath(candidate))
+      if (looksLikePath) found.add(candidate)
     }
   }
   return [...found]
@@ -85,30 +91,14 @@ function extractPaths(blockLines) {
     if (!active) continue
 
     for (const match of line.matchAll(/`([^`]+)`/g)) {
-      const raw = match[1].trim()
-      if (!raw || raw.includes(' × ')) continue
-      const candidate = canonicalPath(raw)
+      const candidate = match[1].trim()
+      if (!candidate || candidate.includes(' × ')) continue
       const absolute = path.join(repositoryRoot, candidate)
-      if (!existsSync(absolute)) continue
-      // A cited folder is a real touch (a week folder, a moved directory); dropping it
-      // would undercount the entry.
-      const stats = statSync(absolute)
-      if (stats.isFile() || stats.isDirectory()) found.add(candidate)
+      if (existsSync(absolute) && statSync(absolute).isFile()) found.add(candidate)
     }
   }
 
   return [...found].sort((left, right) => left.localeCompare(right, 'en', { numeric: true }))
-}
-
-// Entries are never edited, so a path that moved after an entry cited it is mapped here.
-// Two sources: the kit's own retired layout (one ledger FILE per week became one folder
-// per week, cited by 84 entries in the project this came from), and the project's own
-// moves, declared in governance.config.json `pathAliases`, never hard-coded here.
-// Both came from that project's copy of this generator, which was ahead of the kit.
-function canonicalPath(candidate) {
-  let resolved = candidate.replace(/^ledger\/(\d{4}-W\d{2})\.md$/, 'ledger/$1')
-  for (const { pattern, to } of pathAliases) resolved = resolved.replace(pattern, to)
-  return resolved
 }
 
 /** `yes — reason` / `no` / absent. Absent means no; see ledger/README.md. */
@@ -121,7 +111,9 @@ function parseAttention(raw) {
 }
 
 function parseWeekFile(absolutePath, weekId) {
-  const lines = readFileSync(absolutePath, 'utf8').split('\n')
+  const source = readFileSync(absolutePath, 'utf8')
+  const fingerprints = ledgerBlocks(source)
+  const lines = source.split('\n')
   const entries = []
   let current = null
   let pathsBlock = null
@@ -164,6 +156,7 @@ function parseWeekFile(absolutePath, weekId) {
     if (!current) return
     closeWrapped()
     closePathsBlock()
+    Object.assign(current, fingerprints[entries.length])
     entries.push(current)
     current = null
   }
@@ -241,7 +234,7 @@ function parseWeekFile(absolutePath, weekId) {
   }
 
   finish()
-  return audit(entries)
+  return entries
 }
 
 /**
@@ -259,25 +252,13 @@ function parseWeekFile(absolutePath, weekId) {
 // Swift-only, which scored every dashboard and tooling session as unevidenced.
 // Mirrored in scripts/check-ledger-entries.sh — change both together.
 const EVIDENCE =
-  /test|capture|scenario|exit \d|xcodebuild|npm run|node |\.(md|swift|ts|tsx|mjs|sh|json|html|png|mov|tsv|pbxproj)|diff|`/i
+  /test|capture|scenario|exit \d|flutter|dart|xcodebuild|npm run|node |\.(md|dart|swift|ts|tsx|mjs|sh|json|ya?ml|html|png|mov|tsv|pbxproj)|diff|`/i
 const BUILD_ONLY = /build|compile/i
 
 function audit(entries) {
-  // Lexical comparison on "YYYY-MM-DD HH:MM" is correct while two stamps share a UTC
-  // offset, and the offsets here are prose too. Mixed offsets are reported, never
-  // compared — same reasoning as the shell check.
-  const at = (raw) => (raw.match(/\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/) || [''])[0]
-  const off = (raw) => (raw.match(/[-+]\d{2}:?\d{2}\s*$/) || [''])[0].replace(/[\s:]/g, '')
-  const now = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  const nowStamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
-                   `${pad(now.getHours())}:${pad(now.getMinutes())}`
+  const timestampIssues = ledgerTimestampIssues(entries)
 
-  let prevClosed = ''
-  let prevOff = ''
-  let prevId = ''
-
-  for (const entry of entries) {
+  for (const [index, entry] of entries.entries()) {
     // A good closing block often does BOTH: it names what was verified and then says
     // plainly what was not. Testing for "not verified" first scored those as `declared`,
     // the same as an entry that verified nothing — penalising exactly the honesty this
@@ -295,17 +276,7 @@ function audit(entries) {
     else if (BUILD_ONLY.test(claimed)) entry.verification = 'weak'
     else entry.verification = 'evidenced'
 
-    const r = at(entry.reservedAt), c = at(entry.closedAt)
-    const ro = off(entry.reservedAt), co = off(entry.closedAt)
-    const issues = []
-    if (r && c && ro === co && c < r) issues.push(`closed ${c} precedes its own reserved ${r}`)
-    if (c && c > nowStamp) issues.push(`closed ${c} is in the future`)
-    if (r && prevClosed && ro === prevOff && r < prevClosed)
-      issues.push(`reserved ${r} precedes ${prevId} closing at ${prevClosed}`)
-    if (r && c && ro && co && ro !== co) issues.push(`mixed UTC offsets (${ro} vs ${co}) — not compared`)
-    entry.timestampIssue = issues.join('; ')
-
-    if (c) { prevClosed = c; prevOff = co; prevId = entry.id }
+    entry.timestampIssue = timestampIssues[index]
   }
   return entries
 }
@@ -326,10 +297,11 @@ if (weekDirectories.length === 0) {
 
 const entries = weekDirectories
   .flatMap((week) =>
-    readdirSync(path.join(ledgerRoot, week))
+    // The shell checker audits the whole week, including day boundaries.
+    audit(readdirSync(path.join(ledgerRoot, week))
       .filter((name) => DAY_FILE.test(name))
       .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }))
-      .flatMap((day) => parseWeekFile(path.join(ledgerRoot, week, day), week)))
+      .flatMap((day) => parseWeekFile(path.join(ledgerRoot, week, day), week))))
   // Newest first — the dashboard reads top-down.
   .sort((left, right) => right.id.localeCompare(left.id, 'en', { numeric: true }))
 
@@ -341,6 +313,8 @@ export type LedgerStatus = 'open' | 'closed'
 
 export interface LedgerEntry {
   id: string
+  contentHash: string
+  reservationHash: string
   week: string
   title: string
   status: LedgerStatus

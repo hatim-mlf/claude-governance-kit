@@ -1,9 +1,9 @@
 ---
 name: project-code-review
-description: Review a diff on two independent axes at once — Standards (does it follow
+description: Review a diff on two independent axes — Standards (does it follow
   this repository's documented rules and invariants?) and Spec (does it do what the row
-  that commissioned it asked for?) — run as parallel sub-agents so neither contaminates
-  the other. Use this skill whenever a change is about to be committed, when the user says
+  that commissioned it asked for?). Keep the passes independent; run them in parallel only
+  when the active runtime and user instructions permit delegation. Use this skill whenever a change is about to be committed, when the user says
   "review this", "review the diff", "review since <commit>", "check this before I commit",
   or when a session's implementation work is finishing. Not for sweeping the whole project
   for defects — that is a language-specific audit skill's job. Findings from either skill
@@ -18,8 +18,9 @@ Two-axis review of the diff between `HEAD` and a fixed point:
 - **Spec** — does the code do what the row, prompt, or ledger entry that commissioned it
   actually asked for?
 
-Both axes run as **parallel sub-agents** so they cannot pollute each other's context, then
-this skill reports them side by side.
+Keep the axes independent so one cannot mask the other. When the active runtime permits
+delegation, parallel reviewers are useful; otherwise perform two explicit sequential
+passes. Runtime policy and user instructions always take precedence.
 
 **Why two.** A change can pass one and fail the other. Code that follows every convention
 and implements the wrong thing is Standards pass, Spec fail. Code that does exactly what
@@ -30,8 +31,9 @@ to fix.
 
 ## 1. Pin the fixed point
 
-Whatever the operator names — a SHA, `main`, `HEAD~5`, a tag. If they did not name one,
-ask; do not guess.
+Use the fixed point named by the operator. For an uncommitted working-tree review, use
+`HEAD` and include both staged and unstaged changes. If the intended comparison is not
+discoverable, ask rather than silently selecting a different scope.
 
 ```sh
 git rev-parse <fixed-point>          # must resolve
@@ -46,12 +48,13 @@ should fail here, not twice inside two sub-agents.
 
 In this order, stopping at the first hit:
 
-1. The **ledger entry** for this work — `ledger/<ISO-week>.md`. Its `Roadmap row:` and
+1. The **ledger entry** for this work — located under
+   `ledger/<ISO-week>/<opened-date>.md`. Its `Roadmap row:` and
    `Session prompt:` fields point at the other two. This is the best source because it
    records what was *intended*, written before the work.
 2. The **session prompt** named there, under `prompts/`.
-3. The **roadmap row** named there — `docs/roadmap/phase_XX_*.md`, a `§NN.N` row in the
-   phase's Feature Table.
+3. The **roadmap row** named there — under `docs/roadmap/phases/`, `flows/`, `views/`,
+   or a feature-specific roadmap folder.
 4. A tracker row the commits reference — a numbered `Bug NN` in
    `reports/bugs reports/BUG_TRACKER.md`, or a lettered row in `STRUCTURAL_PROBLEMS.md`.
 
@@ -95,9 +98,10 @@ anything tooling already enforces.
 - **Middle Man** — a type that mostly delegates onward. → Cut it out.
 - **Refused Bequest** — a conformer ignoring most of what it inherits. → Composition.
 
-## 4. Spawn both sub-agents, in parallel, in one message
+## 4. Run both review axes independently
 
-Set each sub-agent's model explicitly per `MODEL_DELEGATION.md`; do not let it inherit.
+If delegation is authorized, set concrete bounded briefs and review the results. If it
+is not, run the same briefs as separate passes in the current session.
 
 **Standards brief.** Give it the diff command, the commit list, the paths of every
 standards source from step 3, **and the smell baseline pasted in full** — it has no other

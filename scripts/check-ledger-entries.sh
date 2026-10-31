@@ -10,26 +10,24 @@
 #   nothing external, because an entry's own stamps and its neighbours already
 #   contradict a fabrication most of the time:
 #
-#     T1  closed is not in the future
+#     T1  reserved and closed are not in the future
 #     T2  closed is not before this entry's own reserved
-#     T3  reserved is not before the previous entry's closed
+#     T3  reservation order does not move backward as ids increase
 #     V1  a closed entry states how it was verified, and a build alone is not it
 #
-#   T3 is the one that earns its keep. Reserving and closing happen at different
-#   moments, often in different sessions, so a stamp invented for one entry is
-#   very likely to collide with a real stamp on a neighbour.
+#   T3 compares reservation stamps, not a reservation against the previous close.
+#   Sessions may overlap; overlap is not an error. A later id appearing to have been
+#   reserved before an earlier id is the contradiction worth surfacing.
 #
 # WHY IT WARNS AND NEVER BLOCKS
 #   A wrong stamp is worth a nudge and is never worth refusing a commit over —
 #   and a gate that blocks legitimate work gets bypassed until it means nothing.
 #   The one thing that blocks here is a credential, and it stays that way.
 #
-# WHY IT DOES NOT PARSE DATES
-#   Comparisons are lexical on "YYYY-MM-DD HH:MM", which is correct as long as
-#   two stamps share a UTC offset. Mixed offsets are reported rather than
-#   compared, because `date -j -f` is macOS-only and `date -d` is GNU-only, and
-#   a check that runs on one machine is the failure mode this file exists to
-#   avoid. Travel across a timezone is rare; getting it silently wrong is not.
+# DATES AND OFFSETS
+#   scripts/lib/ledger_timestamps.mjs validates and compares UTC instants for both
+#   this checker and the dashboard. Node is already required by publication.
+#   Missing/invalid offsets produce visible findings rather than disabling checks.
 #
 # TWO MODES, AND WHY
 #   --staged   report only entries this commit adds or edits. This is what the
@@ -63,25 +61,11 @@ week_dir="${1:-${root}/ledger/$(date +%G-W%V)}"
 # used to require the CURRENT week and stopped running each Monday until someone reserved
 # the week's first entry. A check that quietly stops running is the failure this file is
 # meant to prevent, not to demonstrate.
-#
-# An EMPTY week folder counts as "no entries yet" too: the installer creates one, and so
-# does the first reservation of a week, before anything is written into it. The glob
-# names folders only (trailing slash) — a leftover week FILE from the retired layout is
-# not a week to check.
-has_entries() { compgen -G "$1/*.md" > /dev/null; }
-if [ ! -d "$week_dir" ] || ! has_entries "$week_dir"; then
-  fallback=""
-  for d in $(ls -d "${root}/ledger/"20*-W*/ 2>/dev/null | sort -r); do
-    has_entries "${d%/}" && { fallback="${d%/}"; break; }
-  done
+if [ ! -d "$week_dir" ]; then
+  fallback="$(ls -d "${root}/ledger/"20*-W* 2>/dev/null | sort | tail -1)"
   if [ -n "$fallback" ]; then
-    echo "No entries for this ISO week yet — checking the most recent, $(basename "$fallback")."
+    echo "No folder for this ISO week yet — checking the most recent, $(basename "$fallback")."
     week_dir="$fallback"
-  elif [ -d "${root}/ledger" ] && [ -z "${1:-}" ]; then
-    # A ledger that exists and holds no entries is a project that has not reserved one
-    # yet. Say so — it ran, and found nothing — rather than reporting a broken check.
-    echo "Ledger entry check: no entries reserved yet under ${root}/ledger — nothing to check."
-    exit 0
   fi
 fi
 
@@ -130,23 +114,18 @@ duplicate_ids="$(
     | sed 's|^## ||' | sort | uniq -d
 )"
 
-now_stamp="$(date +'%Y-%m-%d %H:%M')"
-now_offset="$(date +'%z')"
+now_stamp="$(date +'%Y-%m-%d %H:%M %z')"
+
+timestamp_findings="$(node "${root}/scripts/lib/ledger_timestamps.mjs" "$week_file" "$touched_ids" "$now_stamp")"
+timestamp_status=$?
+if [ "$timestamp_status" -ne 0 ]; then
+  echo "Ledger timestamp check DID NOT RUN — helper failed (exit ${timestamp_status})."
+  [ -n "$timestamp_findings" ] && echo "$timestamp_findings"
+  exit 1
+fi
 
 findings="$(
-  awk -v now="$now_stamp" -v now_off="$now_offset" -v only="$touched_ids" '
-    function stamp(line,   s) {
-      # "**Reserved:** 2026-08-22 16:12 +0100" -> "2026-08-22 16:12"
-      if (match(line, /[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}/))
-        return substr(line, RSTART, RLENGTH)
-      return ""
-    }
-    function offset(line) {
-      if (match(line, /[-+][0-9]{2}:?[0-9]{2}[ ]*$/)) {
-        s = substr(line, RSTART, RLENGTH); gsub(/[ :]/, "", s); return s
-      }
-      return ""
-    }
+  awk -v only="$touched_ids" '
     function report(id, msg) {
       # In staged mode `only` is a space-separated allowlist of ids.
       if (only != "" && index(" " only " ", " " id " ") == 0) return
@@ -156,22 +135,6 @@ findings="$(
     function flush(   ) {
       if (id == "") return
 
-      # T2 — closed before its own reserved
-      if (closed != "" && reserved != "" && r_off == c_off && closed < reserved)
-        report(id, "closed " closed " is BEFORE its own reserved " reserved)
-
-      # T1 — closed in the future
-      if (closed != "" && c_off == now_off && closed > now)
-        report(id, "closed " closed " is in the FUTURE (now " now ")")
-
-      # T3 — reserved before the previous entry closed
-      if (reserved != "" && prev_closed != "" && r_off == prev_c_off && reserved < prev_closed)
-        report(id, "reserved " reserved " is BEFORE " prev_id " closed " prev_closed)
-
-      # mixed offsets: report, never compare
-      if (reserved != "" && closed != "" && r_off != "" && c_off != "" && r_off != c_off)
-        report(id, "reserved and closed carry different UTC offsets (" r_off " vs " c_off ") — not compared")
-
       # V1 — a closed entry must say how it was verified
       if (status_closed) {
         if (!has_verified)
@@ -179,19 +142,16 @@ findings="$(
         else if (verified_weak)
           report(id, "\"Verified by:\" cites only a build or a compile — a build succeeding is not a verification")
       }
-
-      if (closed != "") { prev_closed = closed; prev_c_off = c_off; prev_id = id }
     }
 
     /^## / {
       flush()
       id = substr($0, 4); sub(/ .*/, "", id)
-      reserved = ""; closed = ""; r_off = ""; c_off = ""
       status_closed = 0; has_verified = 0; verified_weak = 0; in_verified = 0
       next
     }
-    /^\*\*Reserved:\*\*/  { reserved = stamp($0); r_off = offset($0); in_verified = 0; next }
-    /^### Closed —/       { closed   = stamp($0); c_off = offset($0); in_verified = 0; next }
+    /^\*\*Reserved:\*\*/  { in_verified = 0; next }
+    /^### Closed —/       { in_verified = 0; next }
     /^\*\*Status:\*\*/    { if ($0 ~ /Closed/) status_closed = 1; in_verified = 0; next }
 
     /^\*\*Verified by:\*\*/ {
@@ -214,6 +174,11 @@ findings="$(
   ' "$week_file"
 )"
 status=$?
+if [ "$status" -gt 1 ]; then
+  echo "Ledger verification check DID NOT RUN — awk failed (exit ${status})."
+  exit 1
+fi
+findings="${timestamp_findings}${timestamp_findings:+${findings:+$'\n'}}${findings}"
 
 duplicate_report=""
 if [ -n "$duplicate_ids" ]; then

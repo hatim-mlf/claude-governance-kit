@@ -11,21 +11,13 @@ description: How the governance dashboard is kept current from the ledger and re
 
 # Dashboard Sync
 
-**For everything except a ledger entry, you almost never need to do anything.** A
-`SessionEnd` hook runs the sync automatically when a session ends, and a `Stop` hook runs
-a quieter variant after every turn. This skill exists so the mechanism is legible — to a
-person, and to any session that has to reason about it — and so there is a manual fallback
-when the hook cannot run.
+Claude Code hooks run the synchronization automatically at tool, turn, and session
+boundaries. Every runtime still publishes the exact ledger ID after reservation and
+closeout with `scripts/publish-ledger-entry.sh <entry-id>`. That verified handshake is
+required because hook availability differs by runtime.
 
-**A ledger entry is the exception, and it is not optional.** Closing one is followed by
-`scripts/publish-ledger-entry.sh <entry-id>`, in every runtime, because a hook that may
-not have run is not evidence that the final status reached the dashboard. Reserving one
-is published by the PostToolUse hook (`ledger-sync-guard.sh`, which also regenerates
-`ledger/<week>/README.md`). The hooks live in `.claude/settings.json` and cover Claude
-Code only, so in any other runtime run the command after reserving too.
-
-This skill documents the protocol. The verifier and the hooks both invoke the shared sync
-script; reading this file performs nothing.
+This skill documents the protocol. The verifier and hooks both invoke the shared sync
+script; reading this file alone does not perform synchronization.
 
 ## What counts as dashboard-relevant
 
@@ -73,9 +65,9 @@ itself** — it only forwards what is already tagged. That separation is deliber
 script guessing at significance would be guessing, and the dashboard would highlight
 noise.
 
-`yes` means a person must act before the work counts as done, and the reason names the
-action. Something already filed, already caveated in the report, or honestly recorded as
-unverified is `no`. Full rule, and why the bar is high: `ledger/README.md`.
+Reach for `yes` when the entry leaves something a person should look at — a defect found
+but not fixed, a verification that could not be run, a decision taken under an assumption,
+a claim recorded as unverified. Routine completed work is `no`.
 
 ## What the automatic mechanism does, in plain language
 
@@ -84,7 +76,8 @@ The hooks run `scripts/dashboard-sync.sh`, which runs
 
 1. Parses every `ledger/YYYY-Www/YYYY-MM-DD.md` into entries — one folder per ISO week,
    one file per day, ids week-scoped.
-2. Compares them against `ledger/SYNC_LOG.tsv`, keyed on **entry ID *and* status**.
+2. Compares them against `ledger/SYNC_LOG.tsv`, using the **latest event per ID, status and exact entry SHA-256**.
+   Published title/reserved time/session/expected scope must retain its reservation SHA-256.
 3. Fingerprints every watched source file — path, size and mtime — and compares that
    against `.sync-state.json` from the last run.
 4. **If neither has changed, stops there** — no generator runs, nothing is written.
@@ -100,10 +93,12 @@ forever.
 is watched, and the sync appends to it — including it meant every run invalidated its own
 fingerprint and the next run always saw "changed".
 
-The key is the **pair**, not the ID. An entry is reserved in one session and closed in
-another; keying on ID alone would mark it synced while still open and never publish the
-closing block — the summary, the paths, the attention flag, which is the half that
-matters.
+The latest event must match the current status and exact content. An older matching
+status cannot prove a later closeout or same-status update. New events append content
+and reservation SHA-256 columns to the original ID/status/timestamp schema; legacy
+rows are never rewritten. The explicit publisher propagates generator failures and
+checks source/catalog/latest-event equality. Writers serialize on the dashboard's
+`.ledger-sync-lock/`; inspect its owner before recovery per `ledger/README.md`.
 
 **The ledger is never edited to record sync state.** A closed entry is not edited again;
 that is the ledger's own discipline. Sync state lives beside it in its own append-only
@@ -150,8 +145,8 @@ does not sync and nothing anywhere says so: run `npm run sync` by hand.
 ## Manual fallback
 
 For a ledger reservation or closeout, use the repository-root verifier. It regenerates
-the week index — which no hook does — runs the shared synchronization, and then proves
-the exact id and status reached the week index, the sync log, and the generated catalog:
+the week index — which no hook does — runs the shared synchronization, and proves the
+exact ID/status reached the week index, the sync log, and the generated catalog:
 
 ```bash
 scripts/publish-ledger-entry.sh YYYY-Www-NN
@@ -159,6 +154,8 @@ scripts/publish-ledger-entry.sh YYYY-Www-NN
 
 For non-ledger governed changes, or when diagnosing the generator directly, run from the
 dashboard application:
+
+From `bug-tracker-dashboard/app`:
 
 ```bash
 npm run sync              # what the hook runs — safe to run any time
@@ -187,8 +184,8 @@ bundle, which is a separate, lower-frequency action deliberately kept out of the
 
 **Freshness is per-turn, not live.** The dashboard is current as of the last completed
 assistant turn. It never shows anything *wrong*; it shows the last published state.
-Ledger entries are the exception: the PostToolUse hook publishes one on the first tool
-call after it is written, mid-turn. Several days with no session means it sits unchanged until the
+Mid-turn it can still lag: an entry reserved at the start of a long turn is not published
+until that turn finishes. Several days with no session means it sits unchanged until the
 next one starts.
 
 **There is no scheduled trigger, and that is a decision rather than a gap.** A cron job

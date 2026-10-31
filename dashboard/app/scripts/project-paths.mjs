@@ -139,7 +139,7 @@ export const repositoryRoot = configuredRoot('repository', 'the project catalog,
 /** The reports tree: bugs, errors, audits, sessions, verification. */
 export const reportsRoot = configuredRoot('reports', 'the report catalog and the bug tracker')
 
-/** The ledger — one Markdown file per ISO week, each holding many task entries. */
+/** The ledger — one folder per ISO week and one Markdown file per day. */
 export const ledgerRoot = configuredRoot('ledger', 'the ledger catalog and the dashboard sync')
 
 /** The project's own source tree. Used by the project-file inventory. */
@@ -164,16 +164,3 @@ if (!existsSync(trackerPath)) {
 
 /** Where the sync records what it has published. */
 export const syncLogPath = path.join(foundRoot, config.dashboard?.syncLog ?? path.join('ledger', 'SYNC_LOG.tsv'))
-
-/**
- * Paths the project moved after ledger entries cited them (`pathAliases` in
- * governance.config.json). Compiled once here so that a bad pattern fails loudly at load,
- * not as an entry that silently stops resolving.
- */
-export const pathAliases = (config.pathAliases ?? []).map((alias, index) => {
-  try {
-    return { pattern: new RegExp(alias.from), to: alias.to }
-  } catch (error) {
-    throw new Error(`governance.config.json pathAliases[${index}].from is not a valid regular expression: ${error.message}`)
-  }
-})

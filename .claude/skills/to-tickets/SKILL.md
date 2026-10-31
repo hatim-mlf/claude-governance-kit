@@ -1,7 +1,7 @@
 ---
 name: to-tickets
-description: Break a plan, spec, or the current conversation into tracer-bullet rows in a
-  roadmap phase file, each sized to one fresh context window and each declaring what blocks
+description: Break a plan, spec, or the current conversation into tracer-bullet rows in an
+  Daftira roadmap file, each sized to one fresh context window and each declaring what blocks
   it. Use this skill when work is too big for one session and needs splitting, when the user
   says "break this down", "split this up", "turn this into rows", "make tickets", or when a
   wide refactor needs sequencing so the build stays green. Not for writing the prompt that
@@ -17,7 +17,7 @@ The tracker here is not GitHub or Linear. It is:
 
 | Where | For |
 |---|---|
-| `docs/roadmap/phase_XX_*.md` Feature Table, `§NN.N` rows | Feature and build work |
+| The owning file under `docs/roadmap/phases/`, `flows/`, `views/`, or a feature-specific roadmap folder | Feature and build work, using that file's existing row format |
 | `reports/bugs reports/BUG_TRACKER.md`, numbered | App or dashboard defects |
 | `STRUCTURAL_PROBLEMS.md`, lettered | Tooling, layout, process |
 
@@ -86,13 +86,13 @@ Iterate until they approve. Do not write anything into a phase file before that.
 
 ## 6. Write the rows
 
-Append to the owning phase file's Feature Table in dependency order, blockers first,
-continuing its existing `§NN.N` numbering. Match the table's columns exactly; do not
-invent new ones.
+Append to the owning roadmap file in dependency order, blockers first. Continue its
+existing identifiers and match its table/section format exactly; do not invent a
+repository-wide numbering scheme.
 
 | Column | What goes in it |
 |---|---|
-| ID | `§NN.N`, continuing the phase's sequence |
+| ID | Continue the owning file's established identifier format |
 | Feature | The end-to-end behaviour, from the user's point of view |
 | Status | `🔲 Pending` |
 | Notes | **Blocked by:** `§NN.N` or `None`. Then how it is verified. Then any decision the grilling settled. |

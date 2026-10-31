@@ -11,6 +11,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { repositoryRoot, trackerPath } from './project-paths.mjs'
+import { classifyStatus } from './bug-status.mjs'
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const appDirectory = path.resolve(scriptDirectory, '..')
@@ -26,17 +27,6 @@ const outputPath = path.join(appDirectory, 'src', 'data', 'bugCatalog.ts')
 // vocabulary — a fix recorded as done before anyone confirmed it is the most
 // expensive pattern a tracker can have — so it is preserved here rather than
 // collapsed into a single "fixed".
-function classifyStatus(raw) {
-  const text = raw.toLowerCase().replace(/\*/g, '')
-  if (text.includes('product gap')) return 'product_gap'
-  if (text.includes('fixed')) {
-    if (text.includes('unverified')) return 'fixed_unverified'
-    if (text.includes('verified') || text.includes('reconfirmed')) return 'fixed_verified'
-    return 'fixed_unverified' // "Fixed" with no qualifier has not cleared the verified bar
-  }
-  if (text.includes('open')) return 'open'
-  return 'unknown'
-}
 
 function classifySeverity(raw) {
   if (!raw) return null
@@ -183,33 +173,18 @@ function splitOffLessonsSection(source) {
   }
 }
 
-// Read by column NAME, so both formats parse: the original Lesson | Origin | Action table,
-// and the evidence format (Cue | Lesson | Evidence | Verdict, from harness2's rule that a
-// lesson is stored only with the evidence it rests on). Positional reading would have put
-// the cue where the lesson goes.
 function parseLessons(section) {
   const lessons = []
-  let columns = null
   for (const line of section.split('\n')) {
-    const cells = line.split('|').slice(1, -1).map((cell) => cell.trim())
+    const cells = line.split('|').slice(1, -1)
     if (cells.length < 2) continue
-    if (!columns && /^row$/i.test(cells[0])) {
-      columns = cells.map((cell) => cell.toLowerCase())
-      continue
-    }
     const id = (cells[0].match(/\*\*(L-\d+)\*\*/) ?? [])[1]
     if (!id) continue
-    const at = (name, fallback) => {
-      const index = (columns ?? []).indexOf(name)
-      return stripMarkdown(cells[index === -1 ? fallback : index] ?? '')
-    }
-    const evidenceFormat = (columns ?? []).includes('evidence')
     lessons.push({
       id,
-      lesson: at('lesson', 1),
-      origin: evidenceFormat ? at('evidence', 3) : at('origin', 2),
-      action: evidenceFormat ? at('verdict', 4) : at('action', 3),
-      cue: evidenceFormat ? at('cue', 1) : '',
+      lesson: stripMarkdown(cells[1] ?? ''),
+      origin: stripMarkdown(cells[2] ?? ''),
+      action: stripMarkdown(cells[3] ?? ''),
     })
   }
   return lessons.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))

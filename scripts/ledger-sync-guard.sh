@@ -18,7 +18,7 @@
 #   action. This makes it a file-write action instead, which is what reserving actually is.
 #
 # WHY IT IS SAFE TO RUN AFTER EVERY TOOL CALL
-#   The expensive part is guarded by one `find` over `ledger/*.md` — a few dozen files.
+#   The expensive part is guarded by one `find` over the dated ledger Markdown files.
 #   Nothing regenerates unless a ledger entry has actually been written since the last
 #   time this ran. A hook that costs seconds on every command is a hook that gets removed,
 #   which is worse than the gap it closes.
@@ -41,7 +41,7 @@ repository_root=$(dirname -- "$script_directory")
 [ -d "$repository_root/ledger" ] || exit 0
 [ -x "$repository_root/scripts/dashboard-sync.sh" ] || exit 0
 
-stamp="$repository_root/.git/ledger-sync-stamp"
+stamp="$repository_root/.git/glood-ledger-sync-stamp"
 if [ ! -f "$stamp" ]; then
     : >"$stamp" 2>/dev/null || exit 0
     exit 0
@@ -50,12 +50,6 @@ fi
 changed=$(find "$repository_root/ledger" -name '*.md' -newer "$stamp" -print 2>/dev/null | head -n 1)
 [ -n "$changed" ] || exit 0
 
-# The week index first: it is generated, and the sync does not touch it. This used to
-# be the one thing only publish-ledger-entry.sh did, which is why every reservation
-# needed its own publish call. With it here, a reservation written in Claude Code is
-# published by the write itself, and the explicit publish runs once, at close.
-[ -x "$repository_root/scripts/generate-ledger-index.sh" ] \
-    && (cd "$repository_root" && ./scripts/generate-ledger-index.sh) >/dev/null 2>&1
 "$repository_root/scripts/dashboard-sync.sh" --turn >/dev/null 2>&1
 : >"$stamp" 2>/dev/null || true
 exit 0
