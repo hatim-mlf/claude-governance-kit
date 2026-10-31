@@ -66,7 +66,11 @@ undoes it. The kit version lands in `.claude/governance-kit-version`.
 A kit-owned file is replaced only when the project's copy is one the kit once shipped.
 If the project has improved a kit file the kit never received, that file is kept and
 listed as **diverged**. `./update.sh --collect /path/to/project` copies it back into the
-kit, so you can review it and give it to every project.
+kit, so you can review it and give it to every project. A file the project keeps as its
+own version on purpose goes in `kit.projectOwned` in `governance.config.json`; the
+update then leaves it alone. Between updates, `scripts/check-kit-drift.sh` warns at
+commit time when a kit-owned file changes beyond the kit, so a change that should be
+mirrored is noticed when it is made.
 
 To measure what the kit costs a project, and what it has caught, run
 `scripts/governance-audit.sh` there. It is read-only, makes no model calls, and prints

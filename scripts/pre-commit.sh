@@ -346,6 +346,26 @@ else
   warned=1
 fi
 
+# ----------------------------------------------------------------- kit drift
+# Warn, never block. A kit-owned file changed beyond anything the kit has is a change
+# that has not been mirrored (changing-the-governance-system.md, step 3). In the project
+# this came from, 22 such files built up unnoticed.
+drift_check="$(git rev-parse --show-toplevel)/scripts/check-kit-drift.sh"
+if [ -x "$drift_check" ]; then
+  drift_output=$("$drift_check" 2>&1); drift_rc=$?
+  if [ $drift_rc -ne 0 ]; then
+    echo
+    echo "${YEL}${drift_output}${OFF}"
+    warned=1
+  elif [ -n "$drift_output" ]; then
+    echo "${DIM}${drift_output}${OFF}"
+  fi
+else
+  echo
+  echo "${YEL}Kit drift check DID NOT RUN — scripts/check-kit-drift.sh missing or not executable${OFF}"
+  warned=1
+fi
+
 # ------------------------------------------------------------------ optional
 # Project-specific checks (e.g. a database-migration drift check) are opt-in:
 # drop an executable at scripts/check-extra.sh and it runs here, warning only.

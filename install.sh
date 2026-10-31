@@ -186,7 +186,10 @@ copy_new governance.config.schema.json governance.config.schema.json
 if [ -f "$TARGET/governance.config.json" ]; then
   echo "  kept yours:    governance.config.json"
 else
+  kit_remote=$(git -C "$KIT_ROOT" remote get-url origin 2>/dev/null || true)
   sed -e "s|YOUR PROJECT NAME|$NAME|" \
+      -e "s|KIT_PATH|$KIT_ROOT|" \
+      -e "s|KIT_REMOTE|$kit_remote|" \
       -e "s|yourproject|$SHORT|g" \
       -e 's|"path": "src"|"path": "'"$SOURCE_DIR"'"|' \
       "$KIT_ROOT/governance.config.json" > "$TARGET/governance.config.json"
