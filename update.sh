@@ -5,6 +5,15 @@
 #
 #   ./update.sh /path/to/project            # update, then review with git diff
 #   ./update.sh --dry-run /path/to/project  # list what would change, write nothing
+#   ./update.sh --collect /path/to/project  # copy DIVERGED files back into this kit
+#   ./update.sh --force /path/to/project    # also overwrite diverged files (rarely right)
+#
+# Behind versus diverged: a kit-owned file that differs from the kit is replaced only when
+# its exact content appears somewhere in the kit's git history, meaning the project is
+# simply behind. Content the kit has never had means the project improved the file and
+# never mirrored it back. That file is kept and listed, and --collect brings it into the
+# kit for review. GLOOD's ledger-catalog generator was ahead of the kit's in exactly this
+# way, and the first version of this script would have replaced it with the older copy.
 #
 # Why this is separate from install.sh: the installer never overwrites anything, which is
 # right for a first install, and it meant fixes never reached the projects already
@@ -25,10 +34,12 @@
 set -euo pipefail
 
 KIT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
-DRY=0; TARGET=""
+DRY=0; COLLECT=0; FORCE=0; TARGET=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1; shift ;;
+    --collect) COLLECT=1; shift ;;
+    --force)   FORCE=1; shift ;;
     -*) echo "Unknown flag: $1" >&2; exit 2 ;;
     *) TARGET="$1"; shift ;;
   esac
@@ -72,20 +83,48 @@ retired_present=(); for r in "${RETIRED[@]}"; do [ -e "$TARGET/$r" ] && retired_
 version_file=.claude/governance-kit-version
 
 dirty=$(git -C "$TARGET" status --porcelain -- "${owned[@]}" "${retired_present[@]}" "$version_file" 2>/dev/null)
-if [ -n "$dirty" ]; then
+if [ -n "$dirty" ] && [ "$COLLECT" -eq 0 ]; then   # --collect only reads the project
   echo "update.sh: refusing — these kit-owned files have uncommitted changes, and the update must be one reviewable diff:" >&2
   printf '%s\n' "$dirty" | sed 's/^/  /' >&2
   echo "Commit them (if a change there is a fix, it may belong in the kit too), or stash them, then run again." >&2
   exit 1
 fi
 
-changed=0; added=0; removed=0; new_files=(); rewritten=()
+# Every blob the kit has ever committed, to tell "behind" from "diverged".
+kit_blobs=$(mktemp); trap 'rm -f "$kit_blobs"' EXIT
+git -C "$KIT_ROOT" rev-list --all --objects 2>/dev/null | cut -d' ' -f1 | sort -u > "$kit_blobs"
+in_kit_history() { grep -qxF "$(git hash-object --no-filters -- "$1")" "$kit_blobs"; }
+
+if [ "$COLLECT" -eq 1 ]; then
+  kit_dirty=$(git -C "$KIT_ROOT" status --porcelain)
+  [ -z "$kit_dirty" ] || { echo "update.sh --collect: the kit checkout has uncommitted changes; commit or stash them first." >&2; exit 1; }
+  n=0
+  for p in "${pairs[@]}"; do
+    rel="${p#*|}"; src="$KIT_ROOT/${p%%|*}"; dst="$TARGET/$rel"
+    [ -f "$dst" ] && ! cmp -s "$src" "$dst" && ! in_kit_history "$dst" || continue
+    cp -p "$dst" "$src"; echo "  collected: ${p%%|*}  (from $rel)"; n=$((n + 1))
+  done
+  echo
+  if [ "$n" -eq 0 ]; then echo "Nothing diverged: every kit-owned file in the project is current or merely behind."
+  else
+    echo "$n file(s) copied into the kit. Review them there before anything else:"
+    echo "  cd \"$KIT_ROOT\" && git diff"
+    echo "Anything project-specific must be parameterised (governance.config.json) before it is"
+    echo "committed: the kit ships to every project. Then run ./update.sh on the project again."
+  fi
+  exit 0
+fi
+
+changed=0; added=0; removed=0; diverged=(); new_files=(); rewritten=()
 act() { [ "$DRY" -eq 1 ] && echo "  would $1" || echo "  $1"; }
 for p in "${pairs[@]}"; do
   rel="${p#*|}"; src="$KIT_ROOT/${p%%|*}"; dst="$TARGET/$rel"
   if [ ! -e "$dst" ]; then
     act "add:      $rel"; added=$((added + 1)); new_files+=("$rel")
   elif ! cmp -s "$src" "$dst"; then
+    if [ "$FORCE" -eq 0 ] && ! in_kit_history "$dst"; then
+      echo "  diverged: $rel  (kept — the kit has never had this version)"; diverged+=("$rel"); continue
+    fi
     act "replace:  $rel"; changed=$((changed + 1)); rewritten+=("$rel")
   else
     continue
@@ -105,7 +144,7 @@ if [ "$DRY" -eq 0 ]; then
 fi
 
 echo
-echo "$changed replaced, $added added, $removed removed (kit $kit_rev)$([ "$DRY" -eq 1 ] && echo ' — dry run, nothing written')"
+echo "$changed replaced, $added added, $removed removed, ${#diverged[@]} diverged and kept (kit $kit_rev)$([ "$DRY" -eq 1 ] && echo ' — dry run, nothing written')"
 
 echo
 echo "Merge by hand — these are yours, and the kit's template has changed shape:"
@@ -134,4 +173,12 @@ if [ "$DRY" -eq 0 ]; then
   echo "Review with: git -C \"$TARGET\" status   and   git -C \"$TARGET\" diff"
   echo "To undo the whole update:"
   echo "${undo:-true}"
+fi
+
+if [ ${#diverged[@]} -gt 0 ]; then
+  echo
+  echo "${#diverged[@]} kit-owned file(s) are AHEAD of the kit and were not touched. Bring them back"
+  echo "into the kit so every project gets them, then update again:"
+  echo "  ./update.sh --collect \"$TARGET\""
+  exit 3
 fi
