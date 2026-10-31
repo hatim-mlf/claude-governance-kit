@@ -108,7 +108,7 @@ Found by `./update-all.sh --scan ~/Documents`. daftira and daftir only left sync
 | GLOOD | `~/Documents/GLOOD` | Updated and committed (on `feat/glood-plus`). Declares 22 tailored kit files plus `project-code-review` in `kit.projectOwned` | Hand-update GLOOD's tailored files with the kit's changes (row below); 4 overdue obligations |
 | PlanScol | `~/Documents/PlanScol` | Updated and committed | Check `CLAUDE.md`/`UPSTREAM.md` for the three retired rule names and `grill-me` |
 | launchpad | `~/Documents/launchpad` | Updated and committed | Same check as PlanScol |
-| EduFlow | `~/Documents/IOS APP/EduFlow` | **Not updated.** On branch `codex/s3-classes-students`. A one-file commit of its generator fix was still running at 8+ minutes | Confirm the commit landed (`git log -1`), add `bug-tracker-dashboard/app/scripts/generate-project-catalog.mjs` to `kit.projectOwned`, run `./update-all.sh --apply --scan ~/Documents` |
+| EduFlow | `~/Documents/IOS APP/EduFlow` | **Not updated: 15 kit files diverged.** Its generator fix is committed (`3b82584e`, on `codex/s3-classes-students`). The 15 files are on `mirror/eduflow` and reviewed in `docs/analysis/eduflow-mirror-review.md`: real improvements (concurrency-safe ids, strict publication, a single-writer sync, a timestamp library) that depend on three modules not yet collected | Operator decisions in the review, then integration in tested slices. Don't declare these files `projectOwned` yet |
 
 ## Open decisions for the operator
 

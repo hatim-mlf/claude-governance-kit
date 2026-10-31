@@ -70,3 +70,12 @@ echo dirty >> "$stale/README.md"
 bash "$stale/update-all.sh" --scan "$SCRATCH/docs" > "$SCRATCH/dirty" 2>&1 && fail "a dirty kit checkout should stop the run"
 grep -q "uncommitted" "$SCRATCH/dirty" || { cat "$SCRATCH/dirty" >&2; fail "the refusal should say why"; }
 ok "the kit is fast-forwarded from its remote first; a dirty kit checkout stops the run"
+
+# The kit checkout must be on its default branch. A review branch such as mirror/eduflow
+# holds another project's files; updating from it would spread them to every project. The
+# operator's own mirror step left the checkout there for a moment (2026-10-31).
+git -C "$stale" checkout -q -- README.md
+git -C "$stale" checkout -q -b mirror/someproject
+bash "$stale/update-all.sh" --scan "$SCRATCH/docs" > "$SCRATCH/branch" 2>&1 && fail "update-all ran from a review branch"
+grep -q "mirror/someproject" "$SCRATCH/branch" && grep -q "main" "$SCRATCH/branch" || { cat "$SCRATCH/branch" >&2; fail "the refusal should name the branch and say to switch to main"; }
+ok "update-all refuses to run from a branch other than the kit's default"
