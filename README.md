@@ -48,6 +48,25 @@ cd /path/to/your/project/bug-tracker-dashboard/app
 npm install && npm run sync && npm run dev   # → http://localhost:5173
 ```
 
+## Update a project that already runs the kit
+
+```bash
+cd claude-governance-kit && git pull
+./update.sh --dry-run /path/to/your/project   # see what would change
+./update.sh /path/to/your/project
+```
+
+It replaces only kit-owned files (`scripts/`, the kit's skills, the governance rule, the
+dashboard generators) and removes files the kit has retired. It never touches your
+`CLAUDE.md`, ledger, tracker or your own rules. Instead it lists the templates whose
+shape changed, each with the diff command to merge it by hand. It refuses to run over
+uncommitted changes, so the update is one `git diff`, and it prints the command that
+undoes it. The kit version lands in `.claude/governance-kit-version`.
+
+To measure what the kit costs a project, and what it has caught, run
+`scripts/governance-audit.sh` there. It is read-only, makes no model calls, and prints
+counts only.
+
 ## How it works
 
 ```mermaid
