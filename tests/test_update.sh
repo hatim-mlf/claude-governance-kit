@@ -18,6 +18,13 @@ echo "project rule" > .claude/rules/my-app-invariant.md
 echo "project line" >> CLAUDE.md
 git add -A && git commit -qm "older kit" --no-verify
 
+# The project's own code under scripts/ (GLOOD keeps app scripts in scripts/maps/):
+# one committed and then modified, one untracked. Neither is the kit's, so neither may
+# block the update, be touched by it, or be removed by its undo.
+mkdir -p scripts/maps && echo "v1" > scripts/maps/app.py && git add -A && git commit -qm app --no-verify
+echo "v2 wip" >> scripts/maps/app.py
+echo "new" > scripts/maps/untracked.py
+
 # Refuses while kit-owned paths have uncommitted changes.
 echo "wip" >> scripts/pre-commit.sh
 bash "$KIT_ROOT/update.sh" "$target" > "$SCRATCH/u.log" 2>&1 && fail "update ran over uncommitted changes in scripts/"
@@ -35,6 +42,10 @@ grep -q "CLAUDE.md" "$SCRATCH/u.log" || fail "hand-merge list should name CLAUDE
 ok "kit files replaced, retired files removed, project files untouched"
 
 # Undo is one command and leaves the project exactly as before.
+grep -q "v2 wip" scripts/maps/app.py && [ -f scripts/maps/untracked.py ] || fail "update touched the project's own scripts"
 eval "$(grep -A1 'To undo' "$SCRATCH/u.log" | tail -1)"
-[ -z "$(git status --porcelain)" ] || { git status --short >&2; fail "printed undo command did not restore the project"; }
+grep -q "v2 wip" scripts/maps/app.py || fail "undo reverted the project's own uncommitted work"
+[ -f scripts/maps/untracked.py ] || fail "undo deleted the project's own untracked file"
+[ "$(git status --porcelain)" = "$(printf ' M scripts/maps/app.py\n?? scripts/maps/untracked.py')" ] \
+  || { git status --short >&2; fail "printed undo command did not restore the kit files"; }
 ok "the printed undo command restores the project"
