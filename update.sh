@@ -132,6 +132,9 @@ act() { [ "$DRY" -eq 1 ] && echo "  would $1" || echo "  $1"; }
 for p in "${pairs[@]}"; do
   rel="${p#*|}"; src="$KIT_ROOT/${p%%|*}"; dst="$TARGET/$rel"
   if [ ! -e "$dst" ]; then
+    if is_project_owned "$rel"; then   # removed on purpose (GLOOD has its own code review)
+      echo "  project-owned: $rel  (absent by choice — listed in kit.projectOwned)"; continue
+    fi
     act "add:      $rel"; added=$((added + 1)); new_files+=("$rel")
   elif ! cmp -s "$src" "$dst"; then
     if is_project_owned "$rel"; then

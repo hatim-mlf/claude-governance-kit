@@ -47,7 +47,7 @@
         "projectOwned": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Kit-owned paths this project deliberately keeps its own version of (a tailored skill, a forked generator). update.sh leaves them alone and the drift check stays quiet about them; kit changes reach them only by hand."
+          "description": "Kit-owned paths this project deliberately keeps its own version of (a tailored skill, a forked generator), or deliberately does not have (a kit skill it replaced with its own). update.sh never replaces or re-adds them, and the drift check stays quiet about them; kit changes reach them only by hand."
         }
       }
     },
