@@ -63,6 +63,11 @@ shape changed, each with the diff command to merge it by hand. It refuses to run
 uncommitted changes, so the update is one `git diff`, and it prints the command that
 undoes it. The kit version lands in `.claude/governance-kit-version`.
 
+A kit-owned file is replaced only when the project's copy is one the kit once shipped.
+If the project has improved a kit file the kit never received, that file is kept and
+listed as **diverged**. `./update.sh --collect /path/to/project` copies it back into the
+kit, so you can review it and give it to every project.
+
 To measure what the kit costs a project, and what it has caught, run
 `scripts/governance-audit.sh` there. It is read-only, makes no model calls, and prints
 counts only.

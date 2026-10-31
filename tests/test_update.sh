@@ -12,7 +12,12 @@ git add -A && git commit -qm install --no-verify
 
 # Simulate a project on an older kit: a stale script, a retired rule, a project's own
 # rule and CLAUDE.md edits, which must all survive except the retired rule.
-echo "# old" >> scripts/check-reports.sh
+# "Older kit" means content the kit once shipped: the oldest committed version of a
+# script, so update.sh sees it as behind (not diverged) and replaces it.
+stale=scripts/pre-commit.sh
+oldest=$(git -C "$KIT_ROOT" log --format=%H -- "$stale" | tail -1)
+git -C "$KIT_ROOT" show "$oldest:$stale" > "$stale"
+cmp -s "$stale" "$KIT_ROOT/$stale" && fail "test setup: need a kit history with an older $stale (shallow clone?)"
 echo "old rule" > .claude/rules/skills-stay-indexed.md
 echo "project rule" > .claude/rules/my-app-invariant.md
 echo "project line" >> CLAUDE.md
@@ -26,13 +31,13 @@ echo "v2 wip" >> scripts/maps/app.py
 echo "new" > scripts/maps/untracked.py
 
 # Refuses while kit-owned paths have uncommitted changes.
-echo "wip" >> scripts/pre-commit.sh
+echo "wip" >> scripts/check-reports.sh
 bash "$KIT_ROOT/update.sh" "$target" > "$SCRATCH/u.log" 2>&1 && fail "update ran over uncommitted changes in scripts/"
-git checkout -q -- scripts/pre-commit.sh
+git checkout -q -- scripts/check-reports.sh
 ok "refuses while kit-owned paths have uncommitted changes"
 
 bash "$KIT_ROOT/update.sh" "$target" > "$SCRATCH/u.log" 2>&1 || { cat "$SCRATCH/u.log" >&2; fail "update failed"; }
-cmp -s scripts/check-reports.sh "$KIT_ROOT/scripts/check-reports.sh" || fail "stale kit script not replaced"
+cmp -s "$stale" "$KIT_ROOT/$stale" || fail "stale kit script not replaced"
 [ ! -e .claude/rules/skills-stay-indexed.md ] || fail "retired rule not removed"
 [ -f .claude/rules/changing-the-governance-system.md ] || fail "current governance rule not installed"
 grep -q "project rule" .claude/rules/my-app-invariant.md || fail "project's own rule was touched"
