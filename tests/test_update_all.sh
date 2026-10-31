@@ -45,13 +45,18 @@ ok "a project with diverged files is skipped and named, untouched"
 # It takes the kit straight from GitHub: before updating, it fast-forwards the kit checkout
 # from its remote, so the operator never runs a separate pull. It refuses a dirty or
 # diverged kit checkout rather than updating projects from something nobody pushed.
-remote="$SCRATCH/remote.git"; git clone -q --bare "$KIT_ROOT" "$remote"
+# Built from scratch with an explicit main branch: CI checks out a detached merge commit,
+# so cloning the kit checkout itself gives a remote with no branch to push to.
+remote="$SCRATCH/remote.git"; git init -q --bare "$remote"
 (cd "$KIT_ROOT" && git ls-files -co --exclude-standard -z | tar cf - --null -T -) > "$SCRATCH/wt.tar"
-pub="$SCRATCH/publisher"; git clone -q "$remote" "$pub"; (cd "$pub" && tar xf "$SCRATCH/wt.tar")
-git -C "$pub" add -A; git -C "$pub" -c user.email=t@t -c user.name=t commit -qm "working tree" --allow-empty; git -C "$pub" push -q origin HEAD
+pub="$SCRATCH/publisher"; git init -q "$pub"; git -C "$pub" checkout -q -b main
+(cd "$pub" && tar xf "$SCRATCH/wt.tar")
+git -C "$pub" add -A; git -C "$pub" -c user.email=t@t -c user.name=t commit -qm "working tree"
+git -C "$pub" remote add origin "$remote"; git -C "$pub" push -q origin main
+git --git-dir="$remote" symbolic-ref HEAD refs/heads/main
 stale="$SCRATCH/stale-kit"; git clone -q "$remote" "$stale"
 echo "# published later" >> "$pub/README.md"
-git -C "$pub" -c user.email=t@t -c user.name=t commit -qam "a later kit release"; git -C "$pub" push -q origin HEAD
+git -C "$pub" -c user.email=t@t -c user.name=t commit -qam "a later kit release"; git -C "$pub" push -q origin main
 bash "$stale/update-all.sh" --scan "$SCRATCH/docs" > "$SCRATCH/pull" 2>&1 || true
 [ "$(git -C "$stale" log -1 --format=%s)" = "a later kit release" ] || { cat "$SCRATCH/pull" >&2; fail "the kit was not brought up to date from its remote"; }
 grep -q "from GitHub\|from origin" "$SCRATCH/pull" || fail "the pull was not reported"
