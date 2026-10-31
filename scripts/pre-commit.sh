@@ -346,6 +346,23 @@ else
   warned=1
 fi
 
+# --------------------------------------------------------------- obligations
+# Warn, never block. Something owed is past its due date (obligations/README.md). A due
+# date nobody is reminded of is not a deadline; this is the reminder the repo can give
+# without Notion.
+obligations_check="$(git rev-parse --show-toplevel)/scripts/obligations.sh"
+if [ -x "$obligations_check" ]; then
+  if ! obligations_output=$("$obligations_check" --check 2>&1); then
+    echo
+    echo "${YEL}${obligations_output}${OFF}"
+    warned=1
+  fi
+else
+  echo
+  echo "${YEL}Obligations check DID NOT RUN — scripts/obligations.sh missing or not executable${OFF}"
+  warned=1
+fi
+
 # ----------------------------------------------------------------- kit drift
 # Warn, never block. A kit-owned file changed beyond anything the kit has is a change
 # that has not been mirrored (changing-the-governance-system.md, step 3). In the project

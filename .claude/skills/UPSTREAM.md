@@ -54,7 +54,7 @@ upstream.
 
 ## Written here
 
-Six skills have no upstream. They are listed so the generated catalog can tell "we wrote
+Seven skills have no upstream. They are listed so the generated catalog can tell "we wrote
 this" apart from "nobody recorded where this came from" — which are very different
 things, and the reason `unrecorded` is a finding rather than a default.
 
@@ -66,6 +66,7 @@ things, and the reason `unrecorded` is a finding rather than a default.
 | `session-report/` | What a working session actually did | inherited from the originating project |
 | `session-prompt/` | The commission for the next session | inherited from the originating project |
 | `dashboard-sync/` | How the dashboard is kept current from the ledger and reports | inherited from the originating project |
+| `obligations/` | Deadlines and must-dos: the register, the Notion sync with calendar reminders, and working one | 2026-10-31 |
 
 The optional `modules/swift-xcode/swift-xcode-audit/` and `modules/seo-geo/seo-geo/` skills are
 also written-here, and are outside this directory on purpose: one is toolchain-specific, the other

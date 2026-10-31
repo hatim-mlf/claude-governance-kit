@@ -85,6 +85,9 @@ fi
 # scripts/maps/), and the first version of this script checked, and offered to `git
 # clean`, the whole of scripts/. That would have deleted a project's untracked work.
 owned=(); for p in "${pairs[@]}"; do owned+=("${p#*|}"); done
+# Project data the kit seeds once and never touches again (like ledger/ at install).
+seeds=("templates/obligations/README.md|obligations/README.md"
+       "templates/obligations/OBLIGATIONS.md|obligations/OBLIGATIONS.md")
 retired_present=(); for r in "${RETIRED[@]}"; do [ -e "$TARGET/$r" ] && retired_present+=("$r"); done
 version_file=.claude/governance-kit-version
 
@@ -139,6 +142,11 @@ for p in "${pairs[@]}"; do
     continue
   fi
   [ "$DRY" -eq 1 ] || { mkdir -p "$(dirname "$dst")"; cp -p "$src" "$dst"; }
+done
+for p in "${seeds[@]}"; do
+  rel="${p#*|}"; [ -e "$TARGET/$rel" ] && continue
+  act "add:      $rel (new project data; yours from now on)"; added=$((added + 1)); new_files+=("$rel")
+  [ "$DRY" -eq 1 ] || { mkdir -p "$(dirname "$TARGET/$rel")"; cp -p "$KIT_ROOT/${p%%|*}" "$TARGET/$rel"; }
 done
 for r in "${retired_present[@]}"; do
   act "remove:   $r (retired by the kit)"; removed=$((removed + 1)); rewritten+=("$r")

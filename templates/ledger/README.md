@@ -91,6 +91,7 @@ Append to **today's file** in the current week's folder —
 **Session prompt:** `prompts/SESSION_<name>.md`   (if any)
 **Roadmap row:** `docs/roadmap/phase_08_cloud_sync_account.md` — 8.7  (if any)
 **Follows from:** YYYY-Www-NN                                          (if any)
+**Obligation:** O-3                                                    (if any — closing this entry closes it)
 
 **Expected files:**
 - `src/managers/SyncManager.ts`

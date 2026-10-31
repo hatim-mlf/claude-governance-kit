@@ -11,8 +11,12 @@
 #   2026-10-31: governance rule 3,600 -> 3,700. It now names where the kit lives
 #   (kit.path / kit.remote), kit.projectOwned and the drift check. Before that, the rule
 #   pointed at a config key that did not exist.
+#   2026-10-31: skill frontmatter 6,400 -> 6,600. The obligations skill (deadlines and
+#   Notion reminders), its description cut from 443 B to 241 B before raising.
+#   2026-10-31: templates/CLAUDE.md 9,000 -> 9,200. One line: deadlines go to the
+#   obligations skill, and each session starts by checking what is overdue.
 #
 # file-or-group                          max-bytes
-templates/CLAUDE.md                      9000
-skill-frontmatter                        6400
+templates/CLAUDE.md                      9200
+skill-frontmatter                        6600
 .claude/rules/changing-the-governance-system.md   3700

@@ -202,7 +202,7 @@ flowchart TD
       <tr><td>reports/</td><td>One folder per report type — bugs, errors, audits, sessions, verification — each written with its own skill, each citing its ledger id.</td></tr>
       <tr><td>reports/bugs reports/BUG_TRACKER.md</td><td>The live defect register. Status vocabulary separates <em>fixed, unverified</em> from <em>fixed, verified</em>.</td></tr>
       <tr><td>STRUCTURAL_PROBLEMS.md</td><td>The second register: tooling, layout and process defects, plus a Lessons table.</td></tr>
-      <tr><td>.claude/skills/</td><td>13 skills. Six record what happened (bug/error/audit/session reports, session prompt, dashboard sync); seven decide what to do (diagnosing-bugs, grilling, codebase-design, writing-for-agents, tdd, project-code-review, to-tickets).</td></tr>
+      <tr><td>.claude/skills/</td><td>14 skills. Seven record what happened or what is owed (bug/error/audit/session reports, session prompt, dashboard sync, obligations); seven decide what to do (diagnosing-bugs, grilling, codebase-design, writing-for-agents, tdd, project-code-review, to-tickets).</td></tr>
       <tr><td>.claude/rules/</td><td>Path-scoped invariants that load only when matching code is opened, plus a README on how to write one.</td></tr>
       <tr><td>scripts/</td><td>The pre-commit gate, the hook installer, the ledger-entry timestamp checker, the id allocator, the dashboard sync runner.</td></tr>
       <tr><td>bug-tracker-dashboard/</td><td>A local Vite/React app. Generators turn the Markdown into typed data; four views render it. No backend, no accounts.</td></tr>
