@@ -16,7 +16,9 @@ if [ ${#weeks[@]} -eq 0 ]; then
     < <(find "${root}/ledger" -maxdepth 1 -type d -name '20*-W*' | sort)
 fi
 
-for week in "${weeks[@]}"; do
+# ${weeks[@]+...}: bash 3.2 (macOS) aborts on an empty array under `set -u`, and a ledger
+# with no week folders yet has none.
+for week in ${weeks[@]+"${weeks[@]}"}; do
   dir="${root}/ledger/${week}"
   [ -d "$dir" ] || { echo "skip ${week} — no such folder"; continue; }
 

@@ -1,0 +1,32 @@
+name: tests
+
+# The suite on a clean machine, on both platforms the kit runs on. macOS matters most:
+# it ships bash 3.2, which aborts on things bash 5 accepts (an empty array under
+# `set -u` broke update.sh on a real project, 2026-10-31). /bin comes first on PATH there,
+# so every `#!/usr/bin/env bash` script runs under the bash a Mac actually has.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # update.sh tells "behind" from "diverged" by the kit's history
+      - name: Show the bash under test
+        run: |
+          [ "$RUNNER_OS" = macOS ] && export PATH="/bin:/usr/bin:$PATH"
+          command -v bash && bash --version | head -1
+      - name: Run tests/run.sh
+        run: |
+          [ "$RUNNER_OS" = macOS ] && export PATH="/bin:/usr/bin:$PATH"
+          git config --global user.email ci@example.com
+          git config --global user.name ci
+          bash tests/run.sh

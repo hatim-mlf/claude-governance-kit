@@ -91,7 +91,10 @@ seeds=("templates/obligations/README.md|obligations/README.md"
 retired_present=(); for r in "${RETIRED[@]}"; do [ -e "$TARGET/$r" ] && retired_present+=("$r"); done
 version_file=.claude/governance-kit-version
 
-dirty=$(git -C "$TARGET" status --porcelain -- "${owned[@]}" "${retired_present[@]}" "$version_file" 2>/dev/null)
+# ${a[@]+"${a[@]}"} rather than "${a[@]}" wherever an array can be empty: macOS ships
+# bash 3.2, which treats an empty array as unbound under `set -u` and aborts. GLOOD hit it
+# the first time it had no retired files left (2026-10-31).
+dirty=$(git -C "$TARGET" status --porcelain -- "${owned[@]}" ${retired_present[@]+"${retired_present[@]}"} "$version_file" 2>/dev/null)
 if [ -n "$dirty" ] && [ "$COLLECT" -eq 0 ]; then   # --collect only reads the project
   echo "update.sh: refusing — these kit-owned files have uncommitted changes, and the update must be one reviewable diff:" >&2
   printf '%s\n' "$dirty" | sed 's/^/  /' >&2
@@ -148,7 +151,7 @@ for p in "${seeds[@]}"; do
   act "add:      $rel (new project data; yours from now on)"; added=$((added + 1)); new_files+=("$rel")
   [ "$DRY" -eq 1 ] || { mkdir -p "$(dirname "$TARGET/$rel")"; cp -p "$KIT_ROOT/${p%%|*}" "$TARGET/$rel"; }
 done
-for r in "${retired_present[@]}"; do
+for r in ${retired_present[@]+"${retired_present[@]}"}; do
   act "remove:   $r (retired by the kit)"; removed=$((removed + 1)); rewritten+=("$r")
   [ "$DRY" -eq 1 ] || rm -rf "${TARGET:?}/$r"
 done
