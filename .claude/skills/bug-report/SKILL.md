@@ -47,13 +47,16 @@ row. It is simply not required.
 
 | Status | Bar |
 |---|---|
-| 🔴 Open / diagnosed | Cause identified with file+line evidence, no fix written |
-| ✅ Fixed, unverified | Code changed and builds. A commit SHA. Nobody confirmed behaviour |
-| ✅ Fixed, verified | Named evidence exists showing the failure before and the scenario passing after |
-| 🔵 Product gap | Behaves as written; what's missing is a decision, not a fix |
+| 🟠 Open | Confirmed, no fix written. Whether it is diagnosed goes in `Root cause:` |
+| 🟡 Fixed, unverified | Code changed and builds. A commit SHA. Nobody confirmed behaviour |
+| 🟢 Fixed, verified | Named evidence exists showing the failure before and the scenario passing after |
+| ⚪ Product gap | Behaves as written; what's missing is a decision, not a fix |
 
 Do not invent a fifth state, and do not write "Fixed" without saying which of the
-two fixed states it is.
+two fixed states it is. **The status line holds the state and nothing else.** Dates,
+ledger ids, caveats and "verified on device" go on a `**Status note:**` line directly
+below it. `scripts/check-status-lines.sh` warns on anything else, because a status line
+with prose after it can't be counted.
 
 One tracker. If an archived copy of `BUG_TRACKER.md` exists anywhere, do not
 update it.
@@ -105,7 +108,8 @@ to be convenient.
 **Ledger:** 2026-W33-04
 **Date:** 2026-08-15
 **Severity:** 🟠 High
-**Status:** 🔴 Open / diagnosed
+**Status:** 🟠 Open
+**Status note:** diagnosed 2026-08-15, file+line evidence below   (optional)
 **Surface:** app | dashboard
 **Tracker row:** BUG_TRACKER.md — Bug 49
 

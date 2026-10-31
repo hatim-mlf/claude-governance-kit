@@ -192,12 +192,16 @@ started. Do not re-open it in today's file, and do not move it. The closing bloc
 entry that was still open. No fixing typos, no adding forgotten entries, no
 adjusting a summary after the fact. A log that gets rewritten is a draft.
 
-**An entry still open at the end of a session says so.** `**Status:** 🟡 Open —
-<what remains, and what it is waiting on>`. Ambiguity here is the failure mode: an
-entry with no closing block and no note is indistinguishable from one someone forgot.
+**An entry still open at the end of a session says so**, with `**Status:** 🟡 Open` and,
+directly below it, `**Status note:** <what remains, and what it is waiting on>`.
+Ambiguity here is the failure mode: an entry with no closing block and no note is
+indistinguishable from one someone forgot.
 
 **Statuses:** 🟡 Open · ✅ Closed · ⏸️ Abandoned (closed with a reason and no work
-landed, rather than left dangling).
+landed, rather than left dangling). **The status line holds one of these and nothing
+else.** Qualifiers ("partially", "stopped at the gate", "the build is green") go on the
+`**Status note:**` line, where a reader sees them and a parser does not have to.
+`scripts/check-status-lines.sh` warns on new status lines that carry more.
 
 ## How the other logs cite it
 

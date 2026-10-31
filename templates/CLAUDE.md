@@ -202,7 +202,9 @@ everything, and should be rare enough to be memorable.
 `TODO … REMOVE BEFORE RELEASE` and similar markers are reported at commit time and
 never blocked. The same tier reports ledger entries reserved on an earlier day that
 still have no closing block, and ledger timestamp anomalies
-(`scripts/check-ledger-entries.sh`).
+(`scripts/check-ledger-entries.sh`). It also reports a newly added status line that
+carries more than its status word (`scripts/check-status-lines.sh`): prose goes on a
+`**Status note:**` line, so fixed-versus-verified stays countable.
 
 ### Flagged — file size
 

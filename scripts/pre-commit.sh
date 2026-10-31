@@ -312,6 +312,24 @@ if [ -x "$reports_check" ]; then
   fi
 fi
 
+# -------------------------------------------------------------- status lines
+# Warn, never block. A status line holds one vocabulary word; prose goes on a
+# `**Status note:**` line. Only lines this commit adds are checked. The project this came
+# from reached over 100 distinct tracker statuses, and fixed-versus-verified stopped being
+# countable.
+status_check="$(git rev-parse --show-toplevel)/scripts/check-status-lines.sh"
+if [ -x "$status_check" ]; then
+  if ! status_output=$("$status_check" --staged 2>&1); then
+    echo
+    echo "${YEL}${status_output}${OFF}"
+    warned=1
+  fi
+else
+  echo
+  echo "${YEL}Status-line check DID NOT RUN — scripts/check-status-lines.sh missing or not executable${OFF}"
+  warned=1
+fi
+
 # ------------------------------------------------------------------ optional
 # Project-specific checks (e.g. a database-migration drift check) are opt-in:
 # drop an executable at scripts/check-extra.sh and it runs here, warning only.
