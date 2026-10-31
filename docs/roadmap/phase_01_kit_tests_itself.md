@@ -92,3 +92,51 @@ not instructions). Nothing vendored; the mechanisms were rebuilt here.
 | §7.3 | Skills that read outside content treat it as data | ✅ Done | `obligations` (Notion) and `update.sh --collect`. |
 | §7.4 | CI type-checks the dashboard of a fresh install | 🔲 Pending | Found while doing §7.1: `tsc` in the kit repo reports 38 errors, all from data files that only exist after a sync in a real project, so a type error introduced in the kit is invisible today. |
 | §7.5 | Contrastive A/B probe for a large kit change (the same task with and without it, judged blind) | 🔲 Deferred | harness2's propose–probe–compose. Each probe costs several full sessions; use only for a decision whose stakes justify the quota. |
+
+# Where we stopped — 2026-10-31, night
+
+Read this first in the next session. The kit is at `a3c63ef` (PR #13). Every change below
+reached `main` through a PR that passed CI on Ubuntu and on macOS with bash 3.2.
+
+## Projects on this Mac
+
+Found by `./update-all.sh --scan ~/Documents`. daftira and daftir only left sync logs in
+`~/.claude`; they are not on this Mac as kit projects.
+
+| Project | Path | State | Next |
+|---|---|---|---|
+| GLOOD | `~/Documents/GLOOD` | Updated and committed (on `feat/glood-plus`). Declares 22 tailored kit files plus `project-code-review` in `kit.projectOwned` | Hand-update GLOOD's tailored files with the kit's changes (row below); 4 overdue obligations |
+| PlanScol | `~/Documents/PlanScol` | Updated and committed | Check `CLAUDE.md`/`UPSTREAM.md` for the three retired rule names and `grill-me` |
+| launchpad | `~/Documents/launchpad` | Updated and committed | Same check as PlanScol |
+| EduFlow | `~/Documents/IOS APP/EduFlow` | **Not updated.** On branch `codex/s3-classes-students`. A one-file commit of its generator fix was still running at 8+ minutes | Confirm the commit landed (`git log -1`), add `bug-tracker-dashboard/app/scripts/generate-project-catalog.mjs` to `kit.projectOwned`, run `./update-all.sh --apply --scan ~/Documents` |
+
+## Open decisions for the operator
+
+1. **EduFlow's repository is 35.85 GiB of packed history**, with thousands of files modified by
+   a verification run. That is why every git command there is slow. Moving captures and crops
+   to Git LFS, or out of git with a `.gitignore`, fixes it at the root. Proposed as an
+   obligation; not started.
+2. **GLOOD `2026-W37-13`** (the account-switch harness, built but never run) waits on whether
+   to run it.
+3. **Which branch** EduFlow's kit update should land on (`codex/s3-classes-students` today).
+
+## For a session after the quota resets (2026-11-04)
+
+- GLOOD hand-update: bring the kit's changes into GLOOD's tailored files (status-line check,
+  open entries in every week, the hook publishing reservations, the lessons and drift checks in
+  pre-commit), switch its Lessons table to the new columns (its generator first), and merge the
+  rest of `CLAUDE.md`, `ledger/README.md` and the tracker's status section. Recording parts on
+  Haiku.
+- First Notion sync for GLOOD's obligations (row §6.3).
+- Close or abandon GLOOD's 4 overdue obligations.
+- Two weeks on (about 2026-11-14): rerun `scripts/governance-audit.sh` in GLOOD and compare
+  against the baseline in `docs/analysis/control-register.md` (median 54 governance calls per
+  session; evidence rate 90%).
+
+## What this session learned, as lessons (cue · lesson · evidence · verdict)
+
+| Cue | Lesson | Evidence | Verdict |
+|---|---|---|---|
+| A script is tested only on Linux | Run CI on macOS with `/bin/bash` 3.2 first on PATH (`.github/workflows/test.yml`) | `update.sh` aborted on GLOOD on an empty array; Linux CI never saw it | helped · high: the guard test then caught two more in `update-all.sh` |
+| An update overwrites kit files in a project | Replace only content found in the kit's history; keep and list anything else (`update.sh`) | GLOOD's generator was ahead of the kit and would have been overwritten | helped · high |
+| A fix is proposed for a slow command | Find the real cause before adopting it (`changing-the-governance-system.md`, evidence first) | `--untracked-files=no` had no observed effect on EduFlow; the cause was 35.85 GiB of history and thousands of modified files | helped · high: PR #13 shipped the real fix instead |
