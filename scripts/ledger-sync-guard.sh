@@ -41,7 +41,7 @@ repository_root=$(dirname -- "$script_directory")
 [ -d "$repository_root/ledger" ] || exit 0
 [ -x "$repository_root/scripts/dashboard-sync.sh" ] || exit 0
 
-stamp="$repository_root/.git/glood-ledger-sync-stamp"
+stamp="$repository_root/.git/ledger-sync-stamp"
 if [ ! -f "$stamp" ]; then
     : >"$stamp" 2>/dev/null || exit 0
     exit 0
@@ -50,6 +50,12 @@ fi
 changed=$(find "$repository_root/ledger" -name '*.md' -newer "$stamp" -print 2>/dev/null | head -n 1)
 [ -n "$changed" ] || exit 0
 
+# The week index first: it is generated, and the sync does not touch it. This used to
+# be the one thing only publish-ledger-entry.sh did, which is why every reservation
+# needed its own publish call. With it here, a reservation written in Claude Code is
+# published by the write itself, and the explicit publish runs once, at close.
+[ -x "$repository_root/scripts/generate-ledger-index.sh" ] \
+    && (cd "$repository_root" && ./scripts/generate-ledger-index.sh) >/dev/null 2>&1
 "$repository_root/scripts/dashboard-sync.sh" --turn >/dev/null 2>&1
 : >"$stamp" 2>/dev/null || true
 exit 0

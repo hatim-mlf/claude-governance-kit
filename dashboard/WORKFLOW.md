@@ -57,8 +57,10 @@ Two limits, in plain language:
 
 ## Manual fallback
 
-A ledger reservation or closeout goes through the verifier, from the repository root. It
-regenerates the week index, syncs, and then checks that this exact id and status landed:
+A ledger closeout goes through the verifier, from the repository root. So does a
+reservation, in any runtime without the PostToolUse hook; in Claude Code the hook
+publishes reservations itself. The verifier regenerates the week index, syncs, and then
+checks that this exact id and status landed:
 
 ```bash
 scripts/publish-ledger-entry.sh YYYY-Www-NN

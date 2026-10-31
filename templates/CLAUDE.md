@@ -94,18 +94,24 @@ options with their costs, and a recommendation. What you want back is a choice.
 - On writing the prompt that will run the next session, use the **session-prompt** skill.
 - On the dashboard looking stale, or a report not appearing on it, use the
   **dashboard-sync** skill. Routine syncing is automatic in Claude Code — a `SessionEnd`
-  hook does it — but hooks cover one runtime and never regenerate the week index, so
-  they are not publication evidence.
+  hook does it — but hooks cover one runtime and report nothing back, so they are not
+  publication evidence. That is why a closed entry is published with the verifier.
 
 **Before starting any task, reserve a ledger entry** in today's file under the current
 ISO week's folder — `ledger/$(date +%G-W%V)/$(date +%F).md`, and append its closing block when the task ends. Do not work without
 an open entry. Format and rules: `ledger/README.md`.
 
-**Publish the entry the moment it exists** — run
-`scripts/publish-ledger-entry.sh <entry-id>` immediately after reserving it, and again
-after closing it. It regenerates the week index, syncs the dashboard, and then proves
-that this exact id and status reached all three generated views. An entry nobody can see
-is an entry nobody knew was in flight.
+**One entry per commissioned task, not per step.** A task is what one session prompt,
+roadmap row, bug row or user request asks for. The probes, fixes and re-runs inside it
+are lines in that entry's closing block. Open a new entry only when the scope changes,
+and link it with `Follows from:`.
+
+**Publish when you close.** Run `scripts/publish-ledger-entry.sh <entry-id>` after the
+closing block. It regenerates the week index, syncs the dashboard, and proves this exact
+id and status reached all three generated views. In Claude Code, the PostToolUse hook
+publishes the reservation as soon as it is written, week index included. **In any
+runtime without that hook, also run the command right after reserving.** An entry nobody
+can see is an entry nobody knew was in flight.
 
 **Get the id from the file, never from memory or from context** — run
 `scripts/next-ledger-id.sh` and take what it prints. More than one session can be

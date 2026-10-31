@@ -93,11 +93,12 @@ happens, **written up** by the reporting skills, **gated** by the pre-commit hoo
 **published** to the dashboard automatically at session end (and per turn) — idempotently,
 keyed on what actually changed.
 
-The hooks are a convenience of one runtime. A ledger entry is published deliberately, by
-`scripts/publish-ledger-entry.sh <entry-id>` after reserving it and again after closing
-it: that command regenerates the week index, runs the same sync, and then checks that
-this exact id and status arrived. An entry nobody can see is an entry nobody knew was in
-flight.
+The hooks are a convenience of one runtime. In Claude Code, writing a reservation
+publishes it, week index included. A closed entry is published deliberately, by
+`scripts/publish-ledger-entry.sh <entry-id>`: that command regenerates the week index,
+runs the same sync, and then checks that this exact id and status arrived. Runtimes
+without the hook run it after reserving too. An entry nobody can see is an entry nobody
+knew was in flight.
 
 ## The design rules that make it work
 

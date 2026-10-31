@@ -60,6 +60,13 @@ content belongs in a report, and the ledger entry should link to the report inst
 
 **Reserve before starting. Close when done.** No task runs without an open entry.
 
+**One entry per commissioned task, not per step.** A task is what one session prompt,
+roadmap row, bug row or user request asks for. The probes, fixes and re-runs inside it
+go in that entry's closing block. Open a new entry only when the scope changes, and
+link it with `Follows from:`. Each entry costs about five tool calls of ceremony. In the
+project this kit came from, the median entry lasted six minutes, and ceremony came to
+16% of all tool calls, every one of them re-reading the session's whole context.
+
 Reserving before the work means the entry records what you *intended*, which is the
 only version of that information that survives contact with the work. An entry
 written afterwards is a summary, and there is already a place for summaries.
@@ -92,16 +99,18 @@ Append to **today's file** in the current week's folder —
 **Status:** 🟡 Open
 ```
 
-Publish the reservation before implementation continues:
+**In Claude Code, writing the reservation publishes it.** The PostToolUse hook
+(`scripts/ledger-sync-guard.sh`) regenerates the week index and syncs the dashboard on
+the first tool call after any ledger write. **In any runtime without that hook**, publish
+the reservation yourself before implementation continues:
 
 ```bash
 scripts/publish-ledger-entry.sh YYYY-Www-NN
 ```
 
 Success means the week index counts this entry and the exact id appears as `open` in
-both the sync log and the generated dashboard catalog. Runtime hooks are helpful but
-are not proof that this specific reservation was published: they cover one runtime, and
-none of them regenerates the week index.
+both the sync log and the generated dashboard catalog. Either way, the entry is
+*verified* at close, where the same command runs in every runtime.
 
 - **ID** — `<ISO year>-W<week>-NN`, sequential within the week, zero-padded, never
   reused. Week-qualified so a citation from another log is unambiguous without a date

@@ -17,11 +17,12 @@ a quieter variant after every turn. This skill exists so the mechanism is legibl
 person, and to any session that has to reason about it — and so there is a manual fallback
 when the hook cannot run.
 
-**A ledger entry is the exception, and it is not optional.** Reserving or closing one is
-followed by `scripts/publish-ledger-entry.sh <entry-id>`, in every runtime. The hooks live
-in `.claude/settings.json`, so they cover Claude Code and nothing else, and none of them
-regenerates `ledger/<week>/README.md`. A hook that may not have run is not evidence that
-an entry reached the dashboard.
+**A ledger entry is the exception, and it is not optional.** Closing one is followed by
+`scripts/publish-ledger-entry.sh <entry-id>`, in every runtime, because a hook that may
+not have run is not evidence that the final status reached the dashboard. Reserving one
+is published by the PostToolUse hook (`ledger-sync-guard.sh`, which also regenerates
+`ledger/<week>/README.md`). The hooks live in `.claude/settings.json` and cover Claude
+Code only, so in any other runtime run the command after reserving too.
 
 This skill documents the protocol. The verifier and the hooks both invoke the shared sync
 script; reading this file performs nothing.
@@ -186,8 +187,8 @@ bundle, which is a separate, lower-frequency action deliberately kept out of the
 
 **Freshness is per-turn, not live.** The dashboard is current as of the last completed
 assistant turn. It never shows anything *wrong*; it shows the last published state.
-Mid-turn it can still lag: an entry reserved at the start of a long turn is not published
-until that turn finishes. Several days with no session means it sits unchanged until the
+Ledger entries are the exception: the PostToolUse hook publishes one on the first tool
+call after it is written, mid-turn. Several days with no session means it sits unchanged until the
 next one starts.
 
 **There is no scheduled trigger, and that is a decision rather than a gap.** A cron job
