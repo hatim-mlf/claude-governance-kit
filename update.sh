@@ -63,38 +63,46 @@ if [ -d "$TARGET/$dash/scripts" ]; then
   for f in "$KIT_ROOT"/dashboard/app/scripts/*.mjs; do pairs+=("dashboard/app/scripts/$(basename "$f")|$dash/scripts/$(basename "$f")"); done
 fi
 
-touch_paths=(scripts .claude/skills .claude/rules .claude/governance-kit-version)
-[ -d "$TARGET/$dash/scripts" ] && touch_paths+=("$dash/scripts")
+# The exact files this update may write or remove, and nothing else. A directory is never
+# the unit: projects keep their own code beside the kit's (GLOOD has app scripts in
+# scripts/maps/), and the first version of this script checked, and offered to `git
+# clean`, the whole of scripts/. That would have deleted a project's untracked work.
+owned=(); for p in "${pairs[@]}"; do owned+=("${p#*|}"); done
+retired_present=(); for r in "${RETIRED[@]}"; do [ -e "$TARGET/$r" ] && retired_present+=("$r"); done
+version_file=.claude/governance-kit-version
 
-dirty=$(git -C "$TARGET" status --porcelain -- "${touch_paths[@]}")
+dirty=$(git -C "$TARGET" status --porcelain -- "${owned[@]}" "${retired_present[@]}" "$version_file" 2>/dev/null)
 if [ -n "$dirty" ]; then
-  echo "update.sh: refusing — these have uncommitted changes, and the update must be one reviewable diff:" >&2
+  echo "update.sh: refusing — these kit-owned files have uncommitted changes, and the update must be one reviewable diff:" >&2
   printf '%s\n' "$dirty" | sed 's/^/  /' >&2
-  echo "Commit or stash them, then run again." >&2
+  echo "Commit them (if a change there is a fix, it may belong in the kit too), or stash them, then run again." >&2
   exit 1
 fi
 
-changed=0; added=0; removed=0
+changed=0; added=0; removed=0; new_files=(); rewritten=()
 act() { [ "$DRY" -eq 1 ] && echo "  would $1" || echo "  $1"; }
 for p in "${pairs[@]}"; do
-  src="$KIT_ROOT/${p%%|*}"; dst="$TARGET/${p#*|}"
+  rel="${p#*|}"; src="$KIT_ROOT/${p%%|*}"; dst="$TARGET/$rel"
   if [ ! -e "$dst" ]; then
-    act "add:      ${p#*|}"; added=$((added + 1))
+    act "add:      $rel"; added=$((added + 1)); new_files+=("$rel")
   elif ! cmp -s "$src" "$dst"; then
-    act "replace:  ${p#*|}"; changed=$((changed + 1))
+    act "replace:  $rel"; changed=$((changed + 1)); rewritten+=("$rel")
   else
     continue
   fi
   [ "$DRY" -eq 1 ] || { mkdir -p "$(dirname "$dst")"; cp -p "$src" "$dst"; }
 done
-for r in "${RETIRED[@]}"; do
-  [ -e "$TARGET/$r" ] || continue
-  act "remove:   $r (retired by the kit)"; removed=$((removed + 1))
+for r in "${retired_present[@]}"; do
+  act "remove:   $r (retired by the kit)"; removed=$((removed + 1)); rewritten+=("$r")
   [ "$DRY" -eq 1 ] || rm -rf "${TARGET:?}/$r"
 done
 
 kit_rev=$(git -C "$KIT_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)
-[ "$DRY" -eq 1 ] || printf 'kit %s, updated %s\n' "$kit_rev" "$(date +%F)" > "$TARGET/.claude/governance-kit-version"
+if [ "$DRY" -eq 0 ]; then
+  if git -C "$TARGET" ls-files --error-unmatch -- "$version_file" >/dev/null 2>&1; then rewritten+=("$version_file")
+  else new_files+=("$version_file"); fi
+  printf 'kit %s, updated %s\n' "$kit_rev" "$(date +%F)" > "$TARGET/$version_file"
+fi
 
 echo
 echo "$changed replaced, $added added, $removed removed (kit $kit_rev)$([ "$DRY" -eq 1 ] && echo ' — dry run, nothing written')"
@@ -114,15 +122,16 @@ merge .claude/skills/UPSTREAM.md .claude/skills/UPSTREAM.md
 echo "  (For the tracker, only the Status vocabulary section is the kit's; your rows stay.)"
 
 if [ "$DRY" -eq 0 ]; then
-  q=$(printf '%q ' "${touch_paths[@]}")
-  # checkout aborts entirely if ANY pathspec is not in HEAD (the version file is new on a
-  # first update), so it names only tracked paths; clean removes what the update added.
-  tracked=(); for p in "${touch_paths[@]}"; do
-    [ -n "$(git -C "$TARGET" ls-tree --name-only HEAD -- "$p")" ] && tracked+=("$p")
-  done
-  qt=$(printf '%q ' "${tracked[@]}")
+  # Undo names files, never directories: restore what was tracked, delete what was added.
+  # Removed retired files are tracked, so restoring brings them back.
+  undo=""
+  [ ${#rewritten[@]} -gt 0 ] && undo="git -C $(printf '%q' "$TARGET") checkout HEAD -- $(printf '%q ' "${rewritten[@]}")"
+  if [ ${#new_files[@]} -gt 0 ]; then
+    [ -n "$undo" ] && undo="$undo&& "
+    undo="${undo}(cd $(printf '%q' "$TARGET") && rm -f -- $(printf '%q ' "${new_files[@]}"))"
+  fi
   echo
   echo "Review with: git -C \"$TARGET\" status   and   git -C \"$TARGET\" diff"
   echo "To undo the whole update:"
-  echo "git -C \"$TARGET\" checkout HEAD -- ${qt}&& git -C \"$TARGET\" clean -fdq -- ${q}"
+  echo "${undo:-true}"
 fi
