@@ -37,6 +37,19 @@
         "source":     { "$ref": "#/definitions/root" }
       }
     },
+    "pathAliases": {
+      "type": "array",
+      "description": "Paths this project moved after ledger entries cited them. Entries are never edited, so the ledger catalog rewrites a cited path that matches `from` (a regular expression) to `to` ($1 etc. are capture groups). Applied in order.",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string" }
+        }
+      }
+    },
     "dashboard": {
       "type": "object",
       "required": ["dir", "syncLog", "hookLog"],

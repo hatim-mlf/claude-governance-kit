@@ -320,6 +320,12 @@ if [ -x "$reports_check" ]; then
     echo "${YEL}${reports_output}${OFF}"
     warned=1
   fi
+else
+  # From the originating project's copy: every other check says when it did not run,
+  # and this one skipped in silence.
+  echo
+  echo "${YEL}Reports check DID NOT RUN — scripts/check-reports.sh missing or not executable${OFF}"
+  warned=1
 fi
 
 # -------------------------------------------------------------- status lines

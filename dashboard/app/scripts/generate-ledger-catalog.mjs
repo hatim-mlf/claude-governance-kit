@@ -18,7 +18,7 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from '
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { repositoryRoot, ledgerRoot } from './project-paths.mjs'
+import { repositoryRoot, ledgerRoot, pathAliases } from './project-paths.mjs'
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const appDirectory = path.resolve(scriptDirectory, '..')
@@ -69,7 +69,7 @@ function extractExpectedPaths(blockLines) {
       // kind of dropped intent this field is meant to surface.
       if (candidate.includes('*')) continue
       const looksLikePath = candidate.includes('/') || /\.\w{1,5}$/.test(candidate)
-      if (looksLikePath) found.add(candidate)
+      if (looksLikePath) found.add(canonicalPath(candidate))
     }
   }
   return [...found]
@@ -85,14 +85,30 @@ function extractPaths(blockLines) {
     if (!active) continue
 
     for (const match of line.matchAll(/`([^`]+)`/g)) {
-      const candidate = match[1].trim()
-      if (!candidate || candidate.includes(' × ')) continue
+      const raw = match[1].trim()
+      if (!raw || raw.includes(' × ')) continue
+      const candidate = canonicalPath(raw)
       const absolute = path.join(repositoryRoot, candidate)
-      if (existsSync(absolute) && statSync(absolute).isFile()) found.add(candidate)
+      if (!existsSync(absolute)) continue
+      // A cited folder is a real touch (a week folder, a moved directory); dropping it
+      // would undercount the entry.
+      const stats = statSync(absolute)
+      if (stats.isFile() || stats.isDirectory()) found.add(candidate)
     }
   }
 
   return [...found].sort((left, right) => left.localeCompare(right, 'en', { numeric: true }))
+}
+
+// Entries are never edited, so a path that moved after an entry cited it is mapped here.
+// Two sources: the kit's own retired layout (one ledger FILE per week became one folder
+// per week, cited by 84 entries in the project this came from), and the project's own
+// moves, declared in governance.config.json `pathAliases`, never hard-coded here.
+// Both came from that project's copy of this generator, which was ahead of the kit.
+function canonicalPath(candidate) {
+  let resolved = candidate.replace(/^ledger\/(\d{4}-W\d{2})\.md$/, 'ledger/$1')
+  for (const { pattern, to } of pathAliases) resolved = resolved.replace(pattern, to)
+  return resolved
 }
 
 /** `yes — reason` / `no` / absent. Absent means no; see ledger/README.md. */
