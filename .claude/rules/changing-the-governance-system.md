@@ -52,14 +52,15 @@ of date.
 ## 3. Mirror it — the change reaches the kit, the same session
 
 A change to how the system works (a rule, skill, script, ledger format or generator) is
-copied into the governance kit (`governance.config.json` names it), parameterised,
-committed and **pushed**. It is done when the kit's `git status` is clean and `git log
-origin/main..HEAD` is empty. If the push fails, say so in the ledger entry and name the
+copied into the kit at `kit.path` in `governance.config.json` (missing: ask the operator,
+then add it), parameterised, committed and **pushed** to `kit.remote`. It is done when
+the kit's `git status` is clean and `git log origin/main..HEAD` is empty. If the push fails, say so in the ledger entry and name the
 waiting commit.
 
 **Do not mirror** your project's own content: invariants naming your types, tables or
 bug numbers, or platform-specific audit skills. The test: would a project that has never
-seen this app want it?
+seen this app want it? A kit file kept as this project's own version goes in
+`kit.projectOwned`. `scripts/check-kit-drift.sh` warns at commit time on anything else.
 
 **Coverage:** before calling a mirror done, ask *what reads this, and did all of it come
 too?* Grep the kit for the old shape and expect zero hits.

@@ -63,6 +63,12 @@ dash=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1])).get("d
   "$TARGET/governance.config.json" 2>/dev/null || true)
 [ -n "$dash" ] || dash="bug-tracker-dashboard/app"
 
+# Kit-owned paths the project keeps its own version of (governance.config.json
+# kit.projectOwned): never replaced, never collected, never reported as diverged.
+project_owned=$(python3 -I -c 'import json,sys; [print(p) for p in (json.load(open(sys.argv[1])).get("kit") or {}).get("projectOwned") or []]' \
+  "$TARGET/governance.config.json" 2>/dev/null || true)
+is_project_owned() { [ -n "$project_owned" ] && printf '%s\n' "$project_owned" | grep -qxF -- "$1"; }
+
 # kit path -> project path, for every kit-owned file.
 pairs=()
 for f in "$KIT_ROOT"/scripts/*.sh; do pairs+=("scripts/$(basename "$f")|scripts/$(basename "$f")"); done
@@ -101,7 +107,7 @@ if [ "$COLLECT" -eq 1 ]; then
   n=0
   for p in "${pairs[@]}"; do
     rel="${p#*|}"; src="$KIT_ROOT/${p%%|*}"; dst="$TARGET/$rel"
-    [ -f "$dst" ] && ! cmp -s "$src" "$dst" && ! in_kit_history "$dst" || continue
+    [ -f "$dst" ] && ! cmp -s "$src" "$dst" && ! in_kit_history "$dst" && ! is_project_owned "$rel" || continue
     cp -p "$dst" "$src"; echo "  collected: ${p%%|*}  (from $rel)"; n=$((n + 1))
   done
   echo
@@ -122,6 +128,9 @@ for p in "${pairs[@]}"; do
   if [ ! -e "$dst" ]; then
     act "add:      $rel"; added=$((added + 1)); new_files+=("$rel")
   elif ! cmp -s "$src" "$dst"; then
+    if is_project_owned "$rel"; then
+      echo "  project-owned: $rel  (kept — listed in kit.projectOwned; kit changes reach it by hand)"; continue
+    fi
     if [ "$FORCE" -eq 0 ] && ! in_kit_history "$dst"; then
       echo "  diverged: $rel  (kept — the kit has never had this version)"; diverged+=("$rel"); continue
     fi
@@ -159,6 +168,10 @@ merge ledger/README.md templates/ledger/README.md
 merge "reports/bugs reports/BUG_TRACKER.md" "templates/reports/bugs reports/BUG_TRACKER.md"
 merge .claude/skills/UPSTREAM.md .claude/skills/UPSTREAM.md
 echo "  (For the tracker, only the Status vocabulary section is the kit's; your rows stay.)"
+if ! python3 -I -c 'import json,sys; k=json.load(open(sys.argv[1])).get("kit") or {}; sys.exit(0 if k.get("path") else 1)' "$TARGET/governance.config.json" 2>/dev/null; then
+  echo "  governance.config.json — add where the kit lives, so changes can be mirrored and checked:"
+  echo "      \"kit\": { \"path\": \"$KIT_ROOT\", \"remote\": \"$(git -C "$KIT_ROOT" remote get-url origin 2>/dev/null)\", \"projectOwned\": [] }"
+fi
 
 if [ "$DRY" -eq 0 ]; then
   # Undo names files, never directories: restore what was tracked, delete what was added.

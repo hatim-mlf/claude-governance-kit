@@ -37,6 +37,20 @@
         "source":     { "$ref": "#/definitions/root" }
       }
     },
+    "kit": {
+      "type": "object",
+      "description": "Where this project's governance kit lives. Changes to kit-owned files are mirrored there (.claude/rules/changing-the-governance-system.md, step 3), and scripts/check-kit-drift.sh compares against it at commit time.",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "description": "Absolute path of the local kit clone. Written by install.sh." },
+        "remote": { "type": "string", "description": "The kit's git remote, where a mirrored change is pushed so every project can update from it." },
+        "projectOwned": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Kit-owned paths this project deliberately keeps its own version of (a tailored skill, a forked generator). update.sh leaves them alone and the drift check stays quiet about them; kit changes reach them only by hand."
+        }
+      }
+    },
     "pathAliases": {
       "type": "array",
       "description": "Paths this project moved after ledger entries cited them. Entries are never edited, so the ledger catalog rewrites a cited path that matches `from` (a regular expression) to `to` ($1 etc. are capture groups). Applied in order.",

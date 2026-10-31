@@ -166,7 +166,7 @@ it once per clone with `./scripts/install-hooks.sh`.
 | Tier | What | Why this tier |
 |---|---|---|
 | **Blocked** | Credentials: JWTs, API-token shapes, literals assigned to credential-named symbols. False positives take `// pragma: allowlist-secret` | Never legitimate, and git history is permanent |
-| **Warned** | Debug markers (`TODO … REMOVE BEFORE RELEASE`); ledger entries left open from an earlier day, in any week; ledger timestamp anomalies; a new status line carrying more than its status word | Real work trips these sometimes; a block would be bypassed |
+| **Warned** | Debug markers (`TODO … REMOVE BEFORE RELEASE`); ledger entries left open from an earlier day, in any week; ledger timestamp anomalies; a new status line carrying more than its status word; a kit-owned file changed beyond the kit | Real work trips these sometimes; a block would be bypassed |
 | **Flagged** | Files past ~800 lines. Each gets a resolution in `FILE_SIZE_REVIEW.md`: **Splittable** (a row in the phase file) or **Accepted** (with the reason) | A question, not a violation; there is no line limit |
 
 `--no-verify` bypasses everything, and should be rare enough to be memorable.

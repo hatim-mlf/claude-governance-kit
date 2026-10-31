@@ -8,8 +8,11 @@
 #
 # Baseline set 2026-10-31, after the control-register cuts:
 #   templates/CLAUDE.md 8,952 B · skill frontmatter 6,321 B · governance rule 3,494 B
+#   2026-10-31: governance rule 3,600 -> 3,700. It now names where the kit lives
+#   (kit.path / kit.remote), kit.projectOwned and the drift check. Before that, the rule
+#   pointed at a config key that did not exist.
 #
 # file-or-group                          max-bytes
 templates/CLAUDE.md                      9000
 skill-frontmatter                        6400
-.claude/rules/changing-the-governance-system.md   3600
+.claude/rules/changing-the-governance-system.md   3700

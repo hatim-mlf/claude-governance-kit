@@ -41,3 +41,12 @@ bash "$kit/update.sh" --collect "$target" > "$SCRATCH/c.log" 2>&1 || { cat "$SCR
 grep -q "project fix the kit never got" "$kit/scripts/check-reports.sh" || fail "--collect did not copy the diverged file into the kit"
 [ "$(git -C "$kit" status --porcelain)" = " M scripts/check-reports.sh" ] || { git -C "$kit" status --short >&2; fail "--collect touched more than the diverged file"; }
 ok "--collect copies exactly the diverged files back into the kit"
+
+# A diverged file the project declares as its own is skipped quietly: exit 0, untouched.
+git -C "$kit" checkout -q -- . 2>/dev/null || true
+python3 -I -c 'import json; c=json.load(open("governance.config.json")); c.setdefault("kit",{})["projectOwned"]=["scripts/check-reports.sh"]; json.dump(c,open("governance.config.json","w"),indent=2)'
+git add -A && git commit -qm "declare fork" --no-verify
+bash "$kit/update.sh" "$target" > "$SCRATCH/p.log" 2>&1 || { cat "$SCRATCH/p.log" >&2; fail "a projectOwned file should not make the update fail"; }
+grep -q "project fix the kit never got" scripts/check-reports.sh || fail "projectOwned file was overwritten"
+grep -q "project-owned.*scripts/check-reports.sh" "$SCRATCH/p.log" || { cat "$SCRATCH/p.log" >&2; fail "projectOwned file not reported as skipped"; }
+ok "kit.projectOwned files are kept and the update succeeds"
