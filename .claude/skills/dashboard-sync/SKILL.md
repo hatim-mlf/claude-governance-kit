@@ -73,9 +73,9 @@ itself** — it only forwards what is already tagged. That separation is deliber
 script guessing at significance would be guessing, and the dashboard would highlight
 noise.
 
-Reach for `yes` when the entry leaves something a person should look at — a defect found
-but not fixed, a verification that could not be run, a decision taken under an assumption,
-a claim recorded as unverified. Routine completed work is `no`.
+`yes` means a person must act before the work counts as done, and the reason names the
+action. Something already filed, already caveated in the report, or honestly recorded as
+unverified is `no`. Full rule, and why the bar is high: `ledger/README.md`.
 
 ## What the automatic mechanism does, in plain language
 

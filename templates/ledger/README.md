@@ -169,9 +169,14 @@ one the dashboard sync makes — the sync only ever *forwards* what is already t
 session that did the work is the only party that has the context, and it has it exactly
 once.
 
-Reach for `yes` when the entry leaves something a person should look at: a defect found
-but not fixed, a verification that could not be run, a decision taken under an assumption,
-a claim recorded as unverified. Routine completed work is `no`.
+**`yes` means a person must act before the work counts as done**, and the reason names
+the action: run this verification, decide this question, approve this cost. A defect
+found and already filed, a caveat written into the report, or "unverified" recorded
+honestly is `no`: the tracker and the report already carry it. Routine completed work is
+`no`.
+
+The bar is high on purpose. In the project this kit came from, `yes` was set on 323 of
+530 entries (61%), and a flag on most entries filters nothing.
 
 ### `Files actually touched:` — what the sync can and cannot read
 

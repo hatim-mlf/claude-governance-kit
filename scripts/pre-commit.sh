@@ -235,24 +235,34 @@ elif [ ! -s "$week_file" ]; then
   echo "${DIM}  looked for: ${ledger_dir}/$(date +%G-W%V)/ and any earlier 20*-W* folder${OFF}"
   warned=1
 else
-  stale=$(awk -v today="$(date +%Y-%m-%d)" '
+  # Every week, not just the current one. GLOOD's audit found 26 entries open or
+  # status-less for more than two days, none of them warned about: the check read only
+  # this week, and an entry with no status line and no `### Closed` block was never
+  # counted as open. An entry nobody closed is open, whatever its status line says.
+  stale=$(cat "${ledger_dir}"/20*-W*/*.md 2>/dev/null | awk -v today="$(date +%Y-%m-%d)" '
     function flush() {
-      if (id != "" && open == 1 && reserved != "" && reserved < today)
+      if (id != "" && !closed && (open || !has_status) && reserved != "" && reserved < today)
         print "  " id "  (reserved " reserved ")"
     }
-    /^## /                { flush(); id = substr($0, 4); reserved = ""; open = 0; next }
+    /^## [0-9]{4}-W[0-9]{2}-[0-9]+/ { flush(); split(substr($0, 4), w, " "); id = w[1]
+                                      reserved = ""; open = 0; has_status = 0; closed = 0; next }
+    /^## /                { flush(); id = ""; next }
     /^\*\*Reserved:\*\*/    { if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/))
                               reserved = substr($0, RSTART, RLENGTH); next }
-    /^\*\*Status:\*\*/      { open = ($0 ~ /Open/) ? 1 : 0; next }
+    /^\*\*Status:\*\*/      { has_status = 1; open = ($0 ~ /Open/) ? 1 : 0
+                              if ($0 ~ /Closed|Abandoned/) closed = 1; next }
+    /^### Closed/         { closed = 1; next }
     END                   { flush() }
-  ' "$week_file" 2>/dev/null || true)
+  ' || true)
 
   if [ -n "$stale" ]; then
+    n=$(printf '%s\n' "$stale" | wc -l | tr -d ' ')
     echo
-    echo "${YEL}Heads up — ledger entries left open from an earlier day${OFF}"
-    echo "${DIM}$(basename "$week_file") — close them, or mark what they are waiting on.${OFF}"
+    echo "${YEL}Heads up — $n ledger entries left open from an earlier day${OFF}"
+    echo "${DIM}ledger/ (every week) — close them, or abandon them with a Status note saying why.${OFF}"
     echo
-    echo "${YEL}${stale}${OFF}"
+    echo "${YEL}$(printf '%s\n' "$stale" | head -10)${OFF}"
+    [ "$n" -gt 10 ] && echo "${DIM}  … and $((n - 10)) more${OFF}"
     warned=1
   fi
 fi
