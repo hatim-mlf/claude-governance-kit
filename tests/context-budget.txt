@@ -1,0 +1,15 @@
+# Byte ceilings for text the kit puts into every session's context, or into every
+# session that touches governance files. tests/test_context_budget.sh enforces them.
+#
+# To raise a ceiling, change it HERE in the same commit as the growth, and add a dated
+# line below saying what the bytes buy. A ceiling raised with no reason is the drift
+# this file exists to stop. GLOOD's audit (2026-10-31) measured governance at roughly a
+# fifth of input tokens; the template had grown to 15,354 B there.
+#
+# Baseline set 2026-10-31, after the control-register cuts:
+#   templates/CLAUDE.md 8,952 B · skill frontmatter 6,321 B · governance rule 3,494 B
+#
+# file-or-group                          max-bytes
+templates/CLAUDE.md                      9000
+skill-frontmatter                        6400
+.claude/rules/changing-the-governance-system.md   3600

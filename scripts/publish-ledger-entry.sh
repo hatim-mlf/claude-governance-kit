@@ -4,8 +4,9 @@
 # WHAT IT IS FOR
 #   Publish one ledger entry and then prove the exact entry AND its exact status
 #   reached every generated place that claims to show it: the week index, the sync
-#   log, and the dashboard's ledger catalog. Run it twice per entry — once after
-#   reserving it, once after closing it.
+#   log, and the dashboard's ledger catalog. Run it after closing an entry, in every
+#   runtime. After reserving one, run it only where no PostToolUse hook runs
+#   `ledger-sync-guard.sh`, which publishes the reservation, week index included.
 #
 # WHY IT EXISTS AND THE HOOKS ARE NOT ENOUGH
 #   `dashboard-sync.sh` is wired into Claude Code hooks in `.claude/settings.json`.
@@ -22,8 +23,8 @@
 #   goes and looks, so "published" is a checked claim rather than an assumption.
 #
 # WHY IT REGENERATES THE WEEK INDEX
-#   `ledger/<week>/README.md` is generated, and nothing else in the publication path
-#   touches it. When this command replaced the separate `generate-ledger-index.sh`
+#   `ledger/<week>/README.md` is generated. Apart from this command, only the
+#   PostToolUse guard (`ledger-sync-guard.sh`) rebuilds it. When this command replaced the separate `generate-ledger-index.sh`
 #   step at closeout, the index quietly stopped being rebuilt and drifted three
 #   entries behind while publication kept reporting success. A generated file that
 #   only some paths regenerate is a stale file waiting to happen, so publication

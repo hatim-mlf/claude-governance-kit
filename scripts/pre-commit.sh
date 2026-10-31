@@ -207,13 +207,22 @@ done
 # rather than a check that silently stops running.
 ledger_dir="$(git rev-parse --show-toplevel)/ledger"
 week_dir="${ledger_dir}/$(date +%G-W%V)"
-# Fall back to the most recent week rather than going dark at every week boundary — the
-# current week's folder does not exist until someone reserves that week's first entry.
-[ -d "$week_dir" ] || week_dir="$(ls -d "${ledger_dir}/"20*-W* 2>/dev/null | sort | tail -1)"
+# Fall back to the most recent week that holds entries rather than going dark at every
+# week boundary. Same lookup as check-ledger-entries.sh — keep the two in step: folders
+# only (a retired week FILE is not a week), and an empty folder is "no entries yet".
+has_entries() { compgen -G "$1/*.md" > /dev/null; }
+if [ ! -d "$week_dir" ] || ! has_entries "$week_dir"; then
+  week_dir=""
+  for d in $(ls -d "${ledger_dir}/"20*-W*/ 2>/dev/null | sort -r); do
+    has_entries "${d%/}" && { week_dir="${d%/}"; break; }
+  done
+fi
 week_file="$(mktemp)"; trap 'rm -f "$week_file"' EXIT
 [ -n "$week_dir" ] && [ -d "$week_dir" ] && cat "${week_dir}"/*.md > "$week_file" 2>/dev/null
 
-if [ ! -d "$ledger_dir" ]; then
+if [ -d "$ledger_dir" ] && [ -z "$week_dir" ]; then
+  : # A ledger with no entries yet is a project that has not reserved one. Nothing to check.
+elif [ ! -d "$ledger_dir" ]; then
   echo
   echo "${YEL}Ledger check DID NOT RUN — no ledger directory${OFF}"
   echo "${DIM}  looked for: ${ledger_dir}${OFF}"
@@ -226,24 +235,34 @@ elif [ ! -s "$week_file" ]; then
   echo "${DIM}  looked for: ${ledger_dir}/$(date +%G-W%V)/ and any earlier 20*-W* folder${OFF}"
   warned=1
 else
-  stale=$(awk -v today="$(date +%Y-%m-%d)" '
+  # Every week, not just the current one. GLOOD's audit found 26 entries open or
+  # status-less for more than two days, none of them warned about: the check read only
+  # this week, and an entry with no status line and no `### Closed` block was never
+  # counted as open. An entry nobody closed is open, whatever its status line says.
+  stale=$(cat "${ledger_dir}"/20*-W*/*.md 2>/dev/null | awk -v today="$(date +%Y-%m-%d)" '
     function flush() {
-      if (id != "" && open == 1 && reserved != "" && reserved < today)
+      if (id != "" && !closed && (open || !has_status) && reserved != "" && reserved < today)
         print "  " id "  (reserved " reserved ")"
     }
-    /^## /                { flush(); id = substr($0, 4); reserved = ""; open = 0; next }
+    /^## [0-9]{4}-W[0-9]{2}-[0-9]+/ { flush(); split(substr($0, 4), w, " "); id = w[1]
+                                      reserved = ""; open = 0; has_status = 0; closed = 0; next }
+    /^## /                { flush(); id = ""; next }
     /^\*\*Reserved:\*\*/    { if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/))
                               reserved = substr($0, RSTART, RLENGTH); next }
-    /^\*\*Status:\*\*/      { open = ($0 ~ /Open/) ? 1 : 0; next }
+    /^\*\*Status:\*\*/      { has_status = 1; open = ($0 ~ /Open/) ? 1 : 0
+                              if ($0 ~ /Closed|Abandoned/) closed = 1; next }
+    /^### Closed/         { closed = 1; next }
     END                   { flush() }
-  ' "$week_file" 2>/dev/null || true)
+  ' || true)
 
   if [ -n "$stale" ]; then
+    n=$(printf '%s\n' "$stale" | wc -l | tr -d ' ')
     echo
-    echo "${YEL}Heads up — ledger entries left open from an earlier day${OFF}"
-    echo "${DIM}$(basename "$week_file") — close them, or mark what they are waiting on.${OFF}"
+    echo "${YEL}Heads up — $n ledger entries left open from an earlier day${OFF}"
+    echo "${DIM}ledger/ (every week) — close them, or abandon them with a Status note saying why.${OFF}"
     echo
-    echo "${YEL}${stale}${OFF}"
+    echo "${YEL}$(printf '%s\n' "$stale" | head -10)${OFF}"
+    [ "$n" -gt 10 ] && echo "${DIM}  … and $((n - 10)) more${OFF}"
     warned=1
   fi
 fi
@@ -301,6 +320,24 @@ if [ -x "$reports_check" ]; then
     echo "${YEL}${reports_output}${OFF}"
     warned=1
   fi
+fi
+
+# -------------------------------------------------------------- status lines
+# Warn, never block. A status line holds one vocabulary word; prose goes on a
+# `**Status note:**` line. Only lines this commit adds are checked. The project this came
+# from reached over 100 distinct tracker statuses, and fixed-versus-verified stopped being
+# countable.
+status_check="$(git rev-parse --show-toplevel)/scripts/check-status-lines.sh"
+if [ -x "$status_check" ]; then
+  if ! status_output=$("$status_check" --staged 2>&1); then
+    echo
+    echo "${YEL}${status_output}${OFF}"
+    warned=1
+  fi
+else
+  echo
+  echo "${YEL}Status-line check DID NOT RUN — scripts/check-status-lines.sh missing or not executable${OFF}"
+  warned=1
 fi
 
 # ------------------------------------------------------------------ optional

@@ -60,6 +60,13 @@ content belongs in a report, and the ledger entry should link to the report inst
 
 **Reserve before starting. Close when done.** No task runs without an open entry.
 
+**One entry per commissioned task, not per step.** A task is what one session prompt,
+roadmap row, bug row or user request asks for. The probes, fixes and re-runs inside it
+go in that entry's closing block. Open a new entry only when the scope changes, and
+link it with `Follows from:`. Each entry costs about five tool calls of ceremony. In the
+project this kit came from, the median entry lasted six minutes, and ceremony came to
+16% of all tool calls, every one of them re-reading the session's whole context.
+
 Reserving before the work means the entry records what you *intended*, which is the
 only version of that information that survives contact with the work. An entry
 written afterwards is a summary, and there is already a place for summaries.
@@ -92,16 +99,18 @@ Append to **today's file** in the current week's folder —
 **Status:** 🟡 Open
 ```
 
-Publish the reservation before implementation continues:
+**In Claude Code, writing the reservation publishes it.** The PostToolUse hook
+(`scripts/ledger-sync-guard.sh`) regenerates the week index and syncs the dashboard on
+the first tool call after any ledger write. **In any runtime without that hook**, publish
+the reservation yourself before implementation continues:
 
 ```bash
 scripts/publish-ledger-entry.sh YYYY-Www-NN
 ```
 
 Success means the week index counts this entry and the exact id appears as `open` in
-both the sync log and the generated dashboard catalog. Runtime hooks are helpful but
-are not proof that this specific reservation was published: they cover one runtime, and
-none of them regenerates the week index.
+both the sync log and the generated dashboard catalog. Either way, the entry is
+*verified* at close, where the same command runs in every runtime.
 
 - **ID** — `<ISO year>-W<week>-NN`, sequential within the week, zero-padded, never
   reused. Week-qualified so a citation from another log is unambiguous without a date
@@ -160,9 +169,14 @@ one the dashboard sync makes — the sync only ever *forwards* what is already t
 session that did the work is the only party that has the context, and it has it exactly
 once.
 
-Reach for `yes` when the entry leaves something a person should look at: a defect found
-but not fixed, a verification that could not be run, a decision taken under an assumption,
-a claim recorded as unverified. Routine completed work is `no`.
+**`yes` means a person must act before the work counts as done**, and the reason names
+the action: run this verification, decide this question, approve this cost. A defect
+found and already filed, a caveat written into the report, or "unverified" recorded
+honestly is `no`: the tracker and the report already carry it. Routine completed work is
+`no`.
+
+The bar is high on purpose. In the project this kit came from, `yes` was set on 323 of
+530 entries (61%), and a flag on most entries filters nothing.
 
 ### `Files actually touched:` — what the sync can and cannot read
 
@@ -192,12 +206,16 @@ started. Do not re-open it in today's file, and do not move it. The closing bloc
 entry that was still open. No fixing typos, no adding forgotten entries, no
 adjusting a summary after the fact. A log that gets rewritten is a draft.
 
-**An entry still open at the end of a session says so.** `**Status:** 🟡 Open —
-<what remains, and what it is waiting on>`. Ambiguity here is the failure mode: an
-entry with no closing block and no note is indistinguishable from one someone forgot.
+**An entry still open at the end of a session says so**, with `**Status:** 🟡 Open` and,
+directly below it, `**Status note:** <what remains, and what it is waiting on>`.
+Ambiguity here is the failure mode: an entry with no closing block and no note is
+indistinguishable from one someone forgot.
 
 **Statuses:** 🟡 Open · ✅ Closed · ⏸️ Abandoned (closed with a reason and no work
-landed, rather than left dangling).
+landed, rather than left dangling). **The status line holds one of these and nothing
+else.** Qualifiers ("partially", "stopped at the gate", "the build is green") go on the
+`**Status note:**` line, where a reader sees them and a parser does not have to.
+`scripts/check-status-lines.sh` warns on new status lines that carry more.
 
 ## How the other logs cite it
 

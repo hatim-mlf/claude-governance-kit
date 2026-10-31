@@ -58,32 +58,18 @@ Transform tasks into verifiable goals:
 
 ## 5. A Stop Gate Is Not Yours to Lift
 
-**When a prompt, a row, or a skill says "stop and report" on a condition, and that
-condition fires — stop. Report. Wait.** Not "stop unless the fix looks obvious." Not "stop
-unless you can see it is contained." The gate exists because someone decided in advance
-that this specific call was not the session's to make, and by the time you meet it you are
-the least positioned to re-judge that: you are mid-task, you have a plan, and continuing is
-cheaper than pausing.
+**When a prompt, a row or a skill says "stop and report" on a condition, and it fires:
+stop, report, wait.** Not "unless the fix looks obvious". Someone decided in advance that
+this call was not the session's to make, and mid-task you are the least placed to
+re-judge that. **This applies most to a gate you wrote yourself.** The incident behind
+it: a session met its own named stop condition, judged the fix obvious, built it, and
+told the operator afterwards. The fix was sound, and that is the point: **the gate asks
+who decides, not whether the fix is good.** "It is required" makes it a real fork, not a
+non-decision. "I'll mention it at the end" is announcing, not reporting. A gate that was
+set too wide gets narrowed by the person who set it.
 
-**This applies most to a gate you wrote yourself.** The failure that produced this rule:
-a session prompt named a specific collision as a stop condition, the collision happened,
-and the session judged the fix obvious, folded it into its plan before starting, and told
-the operator only after implementing. The fix was sound and not optional — and that is the
-point: **soundness is not the test.** The gate did not ask whether the fix was good, it
-asked who decides.
-
-Three specific traps:
-
-- **"It is required, so it is not a decision."** If the work cannot proceed without it, that
-  is *more* reason to surface it, not less — it means the gate found a real fork.
-- **"I will mention it when I report at the end."** Telling the operator after the code is
-  written is not reporting, it is announcing.
-- **"The gate was written for something bigger than what happened."** Possibly true. Say so
-  and let the operator re-scope it. A gate that turns out too wide gets narrowed by the
-  person who set it, not stepped over by the person who met it.
-
-**What stopping actually costs:** one message. Hand back the finding with its evidence, the
-options with their costs, and a recommendation. What you want back is a choice.
+Stopping costs one message: the finding with its evidence, the options with their costs,
+and a recommendation.
 
 ## Reporting, Ledger, and Model Selection
 
@@ -94,18 +80,24 @@ options with their costs, and a recommendation. What you want back is a choice.
 - On writing the prompt that will run the next session, use the **session-prompt** skill.
 - On the dashboard looking stale, or a report not appearing on it, use the
   **dashboard-sync** skill. Routine syncing is automatic in Claude Code — a `SessionEnd`
-  hook does it — but hooks cover one runtime and never regenerate the week index, so
-  they are not publication evidence.
+  hook does it — but hooks cover one runtime and report nothing back, so they are not
+  publication evidence. That is why a closed entry is published with the verifier.
 
 **Before starting any task, reserve a ledger entry** in today's file under the current
 ISO week's folder — `ledger/$(date +%G-W%V)/$(date +%F).md`, and append its closing block when the task ends. Do not work without
 an open entry. Format and rules: `ledger/README.md`.
 
-**Publish the entry the moment it exists** — run
-`scripts/publish-ledger-entry.sh <entry-id>` immediately after reserving it, and again
-after closing it. It regenerates the week index, syncs the dashboard, and then proves
-that this exact id and status reached all three generated views. An entry nobody can see
-is an entry nobody knew was in flight.
+**One entry per commissioned task, not per step.** A task is what one session prompt,
+roadmap row, bug row or user request asks for. The probes, fixes and re-runs inside it
+are lines in that entry's closing block. Open a new entry only when the scope changes,
+and link it with `Follows from:`.
+
+**Publish when you close.** Run `scripts/publish-ledger-entry.sh <entry-id>` after the
+closing block. It regenerates the week index, syncs the dashboard, and proves this exact
+id and status reached all three generated views. In Claude Code, the PostToolUse hook
+publishes the reservation as soon as it is written, week index included. **In any
+runtime without that hook, also run the command right after reserving.** An entry nobody
+can see is an entry nobody knew was in flight.
 
 **Get the id from the file, never from memory or from context** — run
 `scripts/next-ledger-id.sh` and take what it prints. More than one session can be
@@ -119,13 +111,13 @@ set every subagent's model explicitly rather than letting it inherit. Full rule:
 
 ## Working discipline
 
-The six skills above record what happened. The five below decide what to do and prove
+The six skills above record what happened. The seven below decide what to do and prove
 it worked:
 
 - **Before a hard bug gets a theory, use the `diagnosing-bugs` skill.** No hypothesis
   until one named command has already been run, output shown, that goes red on *this*
   bug.
-- **When a plan is not yet sharp, run `/grill-me`.** It interviews you in rounds until
+- **When a plan is not yet sharp, use the `grilling` skill.** It interviews you in rounds until
   no branch of the decision is left silently assumed.
 - **When designing or judging a module's shape, use the `codebase-design` skill** for
   the vocabulary — module, interface, depth, seam, adapter, leverage, locality.
@@ -155,59 +147,26 @@ Invariants that only matter when a specific kind of file is touched live in
 `.claude/rules/`, path-scoped, so they load when that code is opened instead of on
 every session. See `.claude/rules/README.md` for how to add one.
 
-**Three of them govern the governance system itself**, and ship with this kit. They run in
-that order — place it, index it, mirror it:
-
-- `new-material-is-placed-deliberately.md` — before adding a rule, check, script, skill or
-  section of prose, go back to the system and name where it belongs and why, **before**
-  writing the content. Every piece of a system like this is placed correctly once; the
-  failure is the fifth placement, made late in a session into whatever file was already
-  open. It also carries the step most often skipped: a change to a layout or a count is not
-  finished until every document that states it agrees.
-- `skills-stay-indexed.md` — a skill records where it came from in
-  `.claude/skills/UPSTREAM.md`, and the catalog is generated rather than hand-kept.
-  [`affaan-m/ECC`](https://github.com/affaan-m/ECC) and
-  [`mattpocock/skills`](https://github.com/mattpocock/skills) are pre-approved sources;
-  anywhere else is allowed once its source and licence are recorded. A skill runs with
-  the session's permissions, so an unrecorded one is an unreviewed dependency with write
-  access to this repository.
-- `governance-changes-reach-the-kit.md` — a change to a rule, skill, script or the ledger
-  format is mirrored back into the governance kit in the same session, so other projects
-  do not inherit a version this one has already moved past.
+**One of them governs the governance system itself**, and ships with this kit:
+`changing-the-governance-system.md`. A change to a rule, check, script, skill or the
+ledger format is **placed** (name the destination before writing it), **indexed** (a
+skill records its source in `.claude/skills/UPSTREAM.md`) and **mirrored** (copied into
+the kit and pushed in the same session, with every consumer of the old shape updated).
 
 The rest are yours: an invariant about your own types, tables or subsystems belongs
-here, and does **not** get mirrored to the kit. The test that separates them is in
-`governance-changes-reach-the-kit.md`.
+here, and does **not** get mirrored to the kit. The test that separates them is in that
+rule's step 3.
 
 ## Enforcement
 
 **A rule that nothing checks is a wish. A check that blocks legitimate work gets
-bypassed until it means nothing.** Every rule below states which of the two it is.
+bypassed until it means nothing.** `scripts/pre-commit.sh` runs all of these; install
+it once per clone with `./scripts/install-hooks.sh`.
 
-### Blocked — credentials never reach a commit
+| Tier | What | Why this tier |
+|---|---|---|
+| **Blocked** | Credentials: JWTs, API-token shapes, literals assigned to credential-named symbols. False positives take `// pragma: allowlist-secret` | Never legitimate, and git history is permanent |
+| **Warned** | Debug markers (`TODO … REMOVE BEFORE RELEASE`); ledger entries left open from an earlier day, in any week; ledger timestamp anomalies; a new status line carrying more than its status word | Real work trips these sometimes; a block would be bypassed |
+| **Flagged** | Files past ~800 lines. Each gets a resolution in `FILE_SIZE_REVIEW.md`: **Splittable** (a row in the phase file) or **Accepted** (with the reason) | A question, not a violation; there is no line limit |
 
-`scripts/pre-commit.sh` refuses any staged change containing a credential: JWTs,
-common API-token shapes, and string literals assigned to credential-named symbols.
-
-This one blocks because a credential in source is never legitimate, and because git
-history is permanent — deleting the line later does not remove the key.
-
-Install once per clone: `./scripts/install-hooks.sh`
-
-False positives take `// pragma: allowlist-secret` on the line. `--no-verify` bypasses
-everything, and should be rare enough to be memorable.
-
-### Warned — debug scaffolding, and ledger entries left open
-
-`TODO … REMOVE BEFORE RELEASE` and similar markers are reported at commit time and
-never blocked. The same tier reports ledger entries reserved on an earlier day that
-still have no closing block, and ledger timestamp anomalies
-(`scripts/check-ledger-entries.sh`).
-
-### Flagged — file size
-
-**Large files are flagged for review. They are never blocked, and there is no line
-limit.** A file past roughly 800 lines is a prompt to ask a question, not a violation.
-Each flagged file reaches a resolution recorded in `FILE_SIZE_REVIEW.md`:
-**Splittable** (becomes a row in the owning phase file) or **Accepted** (reviewed and
-judged irreducible, with the reason written down).
+`--no-verify` bypasses everything, and should be rare enough to be memorable.

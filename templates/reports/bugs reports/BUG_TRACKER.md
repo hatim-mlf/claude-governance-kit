@@ -37,6 +37,13 @@ One section per bug, numbered sequentially, never reused. Written with the
 unverified/verified split is the point of this tracker. Only named evidence moves a
 row to verified.
 
+**The status line holds one of these four and nothing else.** When the state needs
+explaining (a date, a ledger id, "verified on device", a caveat), add a
+`**Status note:**` line directly below it. A status with prose after it can't be
+counted. The project this came from reached over 100 distinct status strings, and
+nobody could say how many fixes were still unverified. `scripts/check-status-lines.sh`
+warns at commit time.
+
 ---
 
 ## Bugs
