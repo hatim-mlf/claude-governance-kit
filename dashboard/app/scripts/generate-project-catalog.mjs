@@ -242,6 +242,9 @@ function getGitWorkingTreeCounts() {
       ['-C', repositoryRoot, 'status', '--porcelain=v1', '-z'],
       {
         encoding: 'utf8',
+        // Whole-track verification runs can leave many thousands of changed paths.
+        // Keep the porcelain record intact so the catalog's worktree counts remain exact.
+        maxBuffer: 64 * 1024 * 1024,
         env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' },
         stdio: ['ignore', 'pipe', 'pipe'],
       },
