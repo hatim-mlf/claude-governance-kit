@@ -68,6 +68,8 @@ ok "summary names overdue items and reports a deadline with no date"
 [ "$(./scripts/obligations.sh --next-id)" = "O-5" ] || fail "next id should be O-5"
 ok "--next-id continues the sequence"
 
+rm -f "$json"
 ./scripts/obligations.sh --check > "$SCRATCH/c" 2>&1 && fail "--check should exit 1 when something is overdue"
+[ ! -e "$json" ] || fail "--check must only read; it rewrote obligations.json during a commit"
 [ "$(wc -l < "$SCRATCH/c")" -le 6 ] || { cat "$SCRATCH/c" >&2; fail "--check should stay short at commit time"; }
 ok "--check warns briefly when something is overdue"

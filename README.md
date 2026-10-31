@@ -51,6 +51,18 @@ npm install && npm run sync && npm run dev   # → http://localhost:5173
 
 ## Update a project that already runs the kit
 
+**Every project at once, straight from GitHub** (no Claude involved, no tokens):
+
+```bash
+./update-all.sh --scan ~/Documents            # preview every project found
+./update-all.sh --apply --scan ~/Documents    # update and commit the safe ones
+```
+
+It fast-forwards this checkout from GitHub first, updates each project with `update.sh`,
+and commits exactly the files that touched, never the project's own work. A project with
+diverged files, or uncommitted changes to kit files, is skipped and named. Nothing is
+pushed. One project at a time:
+
 ```bash
 cd claude-governance-kit && git pull
 ./update.sh --dry-run /path/to/your/project   # see what would change

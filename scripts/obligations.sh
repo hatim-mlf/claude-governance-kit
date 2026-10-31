@@ -94,8 +94,11 @@ items.sort(key=lambda o: (o["due"], {"high": 0, "normal": 1, "low": 2}.get(o["im
 # like the ledger's generated indexes without a diff on every run.
 out = {"project": os.path.basename(root),
        "obligations": items, "findings": findings}
-with open(os.path.join(root, "obligations/obligations.json"), "w", encoding="utf-8") as fh:
-    json.dump(out, fh, indent=2, ensure_ascii=False); fh.write("\n")
+# --check (pre-commit) only reads. Writing here left obligations.json modified after
+# every commit, since the hook runs after staging.
+if mode != "--check":
+    with open(os.path.join(root, "obligations/obligations.json"), "w", encoding="utf-8") as fh:
+        json.dump(out, fh, indent=2, ensure_ascii=False); fh.write("\n")
 
 overdue = [o for o in items if dt.date.fromisoformat(o["due"]) < today]
 week = [o for o in items if today <= dt.date.fromisoformat(o["due"]) <= today + dt.timedelta(days=7)]
