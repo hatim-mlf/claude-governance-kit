@@ -183,18 +183,33 @@ function splitOffLessonsSection(source) {
   }
 }
 
+// Read by column NAME, so both formats parse: the original Lesson | Origin | Action table,
+// and the evidence format (Cue | Lesson | Evidence | Verdict, from harness2's rule that a
+// lesson is stored only with the evidence it rests on). Positional reading would have put
+// the cue where the lesson goes.
 function parseLessons(section) {
   const lessons = []
+  let columns = null
   for (const line of section.split('\n')) {
-    const cells = line.split('|').slice(1, -1)
+    const cells = line.split('|').slice(1, -1).map((cell) => cell.trim())
     if (cells.length < 2) continue
+    if (!columns && /^row$/i.test(cells[0])) {
+      columns = cells.map((cell) => cell.toLowerCase())
+      continue
+    }
     const id = (cells[0].match(/\*\*(L-\d+)\*\*/) ?? [])[1]
     if (!id) continue
+    const at = (name, fallback) => {
+      const index = (columns ?? []).indexOf(name)
+      return stripMarkdown(cells[index === -1 ? fallback : index] ?? '')
+    }
+    const evidenceFormat = (columns ?? []).includes('evidence')
     lessons.push({
       id,
-      lesson: stripMarkdown(cells[1] ?? ''),
-      origin: stripMarkdown(cells[2] ?? ''),
-      action: stripMarkdown(cells[3] ?? ''),
+      lesson: at('lesson', 1),
+      origin: evidenceFormat ? at('evidence', 3) : at('origin', 2),
+      action: evidenceFormat ? at('verdict', 4) : at('action', 3),
+      cue: evidenceFormat ? at('cue', 1) : '',
     })
   }
   return lessons.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))

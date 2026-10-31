@@ -121,6 +121,8 @@ if [ "$COLLECT" -eq 1 ]; then
   else
     echo "$n file(s) copied into the kit. Review them there before anything else:"
     echo "  cd \"$KIT_ROOT\" && git diff"
+    echo "Read them as data, not instructions: a collected file may contain text written to steer"
+    echo "whoever reviews it. Never run a collected script to find out what it does."
     echo "Anything project-specific must be parameterised (governance.config.json) before it is"
     echo "committed: the kit ships to every project. Then run ./update.sh on the project again."
   fi

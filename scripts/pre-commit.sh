@@ -346,6 +346,23 @@ else
   warned=1
 fi
 
+# ------------------------------------------------------------------- lessons
+# Warn, never block. A lesson added without its cue, a named component, evidence and a
+# verdict (STRUCTURAL_PROBLEMS.md, Lessons). From harness2: an unsupported lesson is a guess
+# the next session builds on.
+lessons_check="$(git rev-parse --show-toplevel)/scripts/check-lessons.sh"
+if [ -x "$lessons_check" ]; then
+  if ! lessons_output=$("$lessons_check" --staged 2>&1); then
+    echo
+    echo "${YEL}${lessons_output}${OFF}"
+    warned=1
+  fi
+else
+  echo
+  echo "${YEL}Lessons check DID NOT RUN — scripts/check-lessons.sh missing or not executable${OFF}"
+  warned=1
+fi
+
 # --------------------------------------------------------------- obligations
 # Warn, never block. Something owed is past its due date (obligations/README.md). A due
 # date nobody is reminded of is not a deadline; this is the reminder the repo can give

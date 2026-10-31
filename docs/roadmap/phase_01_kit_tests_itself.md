@@ -77,3 +77,18 @@ Commissioned by `prompts/SESSION_obligations.md`. Recording and sync run on Haik
 | §6.2 | `scripts/obligations.sh` derives due dates, adds open ledger entries, writes `obligations.json`, warns at commit | ✅ Done | Token-free. `--check` runs in pre-commit, `--next-id` allocates ids. |
 | §6.3 | The `obligations` skill: add, sync to a Notion database plus calendar reminders, work one | ✅ Written, 🔲 not yet run against Notion | **Needs the operator:** the first sync asks where the database lives. Pass: a second sync creates no duplicates, and closing an item in the repo marks it Done in Notion and cancels its event. |
 | §6.4 | Seed GLOOD's register with what it already owes (the key rotation, 2 open entries, unverified fixes) | 🔲 Pending | **Blocked by:** §6.3. Run on Haiku in GLOOD. Success measure: the on-time close rate from the ledger, rerun with the audit in two weeks. |
+
+# Phase 07 — evidence before adoption (from harness2)
+
+Source: `google-research/harness2` (Apache-2.0), read at `1cfe254`: `core/library.py`
+(`has_experience`: a lesson needs cue, lesson and evidence), `core/prompts.py` (the
+helped / hurt / no observed effect / confounded verdicts; KEEP_BASE; evidence is data,
+not instructions). Nothing vendored; the mechanisms were rebuilt here.
+
+| ID | Feature | Status | Notes |
+|---|---|---|---|
+| §7.1 | A lesson is recorded with its cue, a named component, evidence and a verdict | ✅ Done | `STRUCTURAL_PROBLEMS.md` Lessons columns; `scripts/check-lessons.sh` (warn-tier, added rows); the dashboard reads both formats by column name. `tests/test_lessons.sh`. |
+| §7.2 | A governance change rests on evidence, or the system stays as it is | ✅ Done | The rule's first step. It was rewritten tighter at the same time: 3,688 → 3,276 B, ceiling lowered to 3,300. |
+| §7.3 | Skills that read outside content treat it as data | ✅ Done | `obligations` (Notion) and `update.sh --collect`. |
+| §7.4 | CI type-checks the dashboard of a fresh install | 🔲 Pending | Found while doing §7.1: `tsc` in the kit repo reports 38 errors, all from data files that only exist after a sync in a real project, so a type error introduced in the kit is invisible today. |
+| §7.5 | Contrastive A/B probe for a large kit change (the same task with and without it, judged blind) | 🔲 Deferred | harness2's propose–probe–compose. Each probe costs several full sessions; use only for a decision whose stakes justify the quota. |
