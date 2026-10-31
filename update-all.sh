@@ -50,6 +50,15 @@ log=$(mktemp); trap 'rm -f "$log"' EXIT
 [ ${#projects[@]} -gt 0 ] || { echo "Usage: ./update-all.sh [--apply] (--scan DIR | PROJECT...)" >&2; exit 2; }
 
 if [ "$PULL" -eq 1 ]; then
+  # Only ever update from the kit's default branch. A review branch like mirror/eduflow
+  # holds another project's files; updating from it would spread them everywhere.
+  default=$(git -C "$KIT_ROOT" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+  current=$(git -C "$KIT_ROOT" rev-parse --abbrev-ref HEAD)
+  if [ "$current" != "${default:-main}" ]; then
+    echo "update-all.sh: the kit checkout is on '$current', not '${default:-main}'. Switch back first:" >&2
+    echo "  git -C \"$KIT_ROOT\" checkout ${default:-main}" >&2
+    exit 1
+  fi
   if [ -n "$(git -C "$KIT_ROOT" status --porcelain)" ]; then
     echo "update-all.sh: the kit checkout at $KIT_ROOT has uncommitted changes. Commit or stash them," >&2
     echo "or pass --no-pull to update from it as it is." >&2
