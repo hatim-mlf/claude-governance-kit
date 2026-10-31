@@ -49,8 +49,12 @@ export interface BugPattern {
 export interface ProjectLesson {
   id: string
   lesson: string
+  /** The evidence the lesson rests on (the old format's Origin column). */
   origin: string
+  /** The verdict and confidence (the old format's Action column). */
   action: string
+  /** The situation the lesson applies to; empty for old-format rows. */
+  cue: string
 }
 
 export interface BugCatalogStats {
