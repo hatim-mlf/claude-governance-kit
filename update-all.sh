@@ -65,6 +65,33 @@ if [ "$PULL" -eq 1 ]; then
   echo "Kit brought up to date from GitHub/origin ($remote_url)."
 fi
 kit_rev=$(git -C "$KIT_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)
+
+# commit_touched PROJECT MESSAGE PATH...: commit exactly PATH... on top of HEAD.
+# Returns 0 when committed, 1 when they already match HEAD, 2 on failure ($commit_error).
+commit_rc=0; commit_error=""
+commit_touched() {
+  local p="$1" msg="$2" old tmp tree new path; shift 2
+  old=$(git -C "$p" rev-parse -q --verify HEAD) || { commit_rc=2; commit_error="the project has no commit yet"; return 2; }
+  tmp="$(cd "$p" && git rev-parse --absolute-git-dir)/kit-update-index"
+  rm -f "$tmp"
+  GIT_INDEX_FILE="$tmp" git -C "$p" read-tree HEAD || { commit_rc=2; commit_error="could not read HEAD"; return 2; }
+  for path in "$@"; do
+    if [ -e "$p/$path" ]; then GIT_INDEX_FILE="$tmp" git -C "$p" add -f -- "$path"
+    else GIT_INDEX_FILE="$tmp" git -C "$p" rm -r -q --cached --ignore-unmatch -- "$path"; fi \
+      || { rm -f "$tmp"; commit_rc=2; commit_error="could not stage $path"; return 2; }
+  done
+  tree=$(GIT_INDEX_FILE="$tmp" git -C "$p" write-tree); rm -f "$tmp"
+  if [ "$tree" = "$(git -C "$p" rev-parse "HEAD^{tree}")" ]; then commit_rc=1; return 1; fi
+  new=$(git -C "$p" commit-tree "$tree" -p "$old" -m "$msg") \
+    && git -C "$p" update-ref -m "commit: $msg" HEAD "$new" "$old" \
+    || { commit_rc=2; commit_error="git refused the commit"; return 2; }
+  # Bring the real index in line for those paths only, leaving anything the project staged.
+  # --no-refresh: a plain reset re-checks every file in the working tree afterwards, which is
+  # the same slow scan this function exists to avoid. Older git lacks the flag; fall back.
+  git -C "$p" reset -q --no-refresh -- "$@" 2>/dev/null || git -C "$p" reset -q -- "$@" 2>/dev/null || true
+  commit_rc=0
+}
+
 echo "Kit $kit_rev — $([ "$APPLY" -eq 1 ] && echo "updating" || echo "preview, nothing is written; add --apply to update")"
 echo
 updated=0; current=0; skipped=0
@@ -90,21 +117,22 @@ for p in ${projects[@]+"${projects[@]}"}; do
   fi
 
   "$KIT_ROOT/update.sh" "$p" > "$log" 2>&1
-  # Exactly the paths update.sh reports, plus the version stamp. Nothing else is staged.
+  # Exactly the paths update.sh reports, plus the version stamp.
   touched=(.claude/governance-kit-version)
   while IFS= read -r path; do touched+=("$path"); done < <(sed -nE 's/^  (add|replace|remove): +([^ ].*)$/\2/p' "$log" | sed -E 's/ +\(.*\)$//')
-  git -C "$p" add -A -- ${touched[@]+"${touched[@]}"} 2>/dev/null
-  if git -C "$p" diff --cached --quiet; then
-    echo "  ✓ $name — nothing to commit"; current=$((current + 1)); continue
-  fi
-  # --untracked-files=no: the commit takes only what was staged above, so there is no reason
-  # to scan the working tree. EduFlow (2026-10-31) had many thousands of changed paths from
-  # a verification run, and a commit there ran for minutes.
-  if git -C "$p" commit -q --untracked-files=no -m "governance: update from claude-governance-kit ($kit_rev)" > "$log" 2>&1; then
+  # The commit is built from those paths alone, with git's plumbing and a scratch index, never
+  # with `git commit`. `git commit` commits the whole index, so it would sweep in work the
+  # project had staged itself, and it re-reads every modified file in the working tree: in
+  # EduFlow (35.85 GiB of history, thousands of files modified by a verification run) that
+  # ran for many minutes. Hooks do not run on this commit: it holds only the kit's files.
+  if commit_touched "$p" "governance: update from claude-governance-kit ($kit_rev)" ${touched[@]+"${touched[@]}"}; then
     echo "  ✓ $name — updated and committed: ${summary%% (kit*}"; updated=$((updated + 1))
+  elif [ "$commit_rc" -eq 1 ]; then
+    echo "  ✓ $name — nothing to commit"; current=$((current + 1))
   else
-    echo "  ✗ $name — updated but the commit was refused (staged, not committed):"
-    sed 's/^/        /' "$log" | tail -6; skipped=$((skipped + 1))
+    echo "  ✗ $name — updated but not committed: $commit_error"
+    echo "        the files are written; commit them yourself, or undo with update.sh's printed command"
+    skipped=$((skipped + 1))
   fi
 done
 

@@ -61,3 +61,10 @@ bash "$kit/update.sh" "$target" > "$SCRATCH/a.log" 2>&1 || { cat "$SCRATCH/a.log
 [ ! -e .claude/skills/project-code-review/SKILL.md ] || fail "a projectOwned file the project removed was added back"
 grep -q "project-code-review.*absent by choice" "$SCRATCH/a.log" || { cat "$SCRATCH/a.log" >&2; fail "the skipped add was not reported"; }
 ok "a projectOwned file the project removed stays removed"
+
+# A project-owned file with uncommitted changes does not block the update: update.sh never
+# writes it. EduFlow (2026-10-31) was refused over its own generator, which it was editing.
+echo "// work in progress" >> scripts/check-reports.sh      # listed in kit.projectOwned above
+bash "$kit/update.sh" --dry-run "$target" > "$SCRATCH/w.log" 2>&1 || { cat "$SCRATCH/w.log" >&2; fail "an uncommitted projectOwned file blocked the update"; }
+git checkout -q -- scripts/check-reports.sh
+ok "an uncommitted change to a projectOwned file does not block the update"

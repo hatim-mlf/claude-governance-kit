@@ -21,6 +21,7 @@ mk() {  # an installed project, then made "older": a stale kit script and no obl
 a=$(mk alpha); b=$(mk beta)
 echo "// beta's own fix" >> "$b/scripts/check-reports.sh"; git -C "$b" commit -qam "beta fix" --no-verify
 echo "wip" > "$a/src/work-in-progress.ts"      # the project's own uncommitted work
+echo "staged" > "$a/src/staged-by-me.ts"; git -C "$a" add src/staged-by-me.ts   # and staged work
 mkdir -p "$SCRATCH/docs/not-a-project"
 
 bash "$KIT_ROOT/update-all.sh" --no-pull --scan "$SCRATCH/docs" > "$SCRATCH/dry" 2>&1 || true
@@ -34,11 +35,13 @@ bash "$KIT_ROOT/update-all.sh" --no-pull --apply --scan "$SCRATCH/docs" > "$SCRA
 cmp -s "$a/scripts/pre-commit.sh" "$KIT_ROOT/scripts/pre-commit.sh" || fail "alpha's stale script not replaced"
 [ -z "$(git -C "$a" status --porcelain -- scripts .claude obligations)" ] || { git -C "$a" status --short >&2; fail "alpha's update was not committed"; }
 git -C "$a" log -1 --format=%s | grep -q "update from claude-governance-kit" || fail "alpha's commit message is wrong"
-[ "$(git -C "$a" status --porcelain --untracked-files=all)" = "?? src/work-in-progress.ts" ] || { git -C "$a" status --short >&2; fail "alpha's own work was touched or committed"; }
+[ "$(git -C "$a" status --porcelain --untracked-files=all)" = "$(printf 'A  src/staged-by-me.ts\n?? src/work-in-progress.ts')" ] || { git -C "$a" status --short >&2; fail "alpha's own work was touched or committed"; }
+git -C "$a" show --name-only --format= HEAD | grep -q "staged-by-me" && fail "the kit commit swept in work the project had staged itself"
 ok "--apply updates and commits only the kit's files, leaving the project's own work alone"
-# The commit flag is the contract: without it, a project with a huge working tree (EduFlow,
-# thousands of untracked paths) stalls for minutes while git scans files it will not commit.
-grep -qE 'git -C "\$p" commit .*--untracked-files=no' "$KIT_ROOT/update-all.sh" || fail "update-all's commit scans untracked files"
+# The commit is built from the touched paths alone, never with `git commit`: in EduFlow
+# (35.85 GiB of history, thousands of modified files) `git commit` re-read every modified
+# file and ran for many minutes, and it would also have swept in the project's own staged work.
+grep -qE '^[^#]*git -C "\$p" commit( |$)' "$KIT_ROOT/update-all.sh" && fail "update-all still commits with git commit, which scans the working tree"
 
 grep -q "beta.*diverged" "$SCRATCH/run" || { cat "$SCRATCH/run" >&2; fail "beta's divergence not reported"; }
 grep -q "beta's own fix" "$b/scripts/check-reports.sh" || fail "beta's own fix was overwritten"
