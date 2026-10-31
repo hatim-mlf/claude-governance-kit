@@ -11,9 +11,11 @@ set -euo pipefail
 
 # A throwaway kit clone, so --collect can write into it.
 kit="$SCRATCH/kit"; git clone -q "$KIT_ROOT" "$kit"
-# The clone has the last commit; test the working copy of the updater.
-cp "$KIT_ROOT/update.sh" "$kit/update.sh"
-git -C "$kit" -c user.email=t@t -c user.name=t commit -qam "updater under test" --allow-empty
+# The clone has the last commit; the project below is installed from the working tree.
+# Commit the working tree into the clone so the two agree, as they do after a release.
+(cd "$KIT_ROOT" && git ls-files -co --exclude-standard -z | tar cf - --null -T -) | (cd "$kit" && tar xf -)
+git -C "$kit" add -A
+git -C "$kit" -c user.email=t@t -c user.name=t commit -qm "working tree under test" --allow-empty
 target=$(fresh_install); cd "$target"
 git add -A && git commit -qm install --no-verify
 
