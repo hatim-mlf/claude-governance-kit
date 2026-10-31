@@ -97,7 +97,10 @@ for p in ${projects[@]+"${projects[@]}"}; do
   if git -C "$p" diff --cached --quiet; then
     echo "  ✓ $name — nothing to commit"; current=$((current + 1)); continue
   fi
-  if git -C "$p" commit -q -m "governance: update from claude-governance-kit ($kit_rev)" > "$log" 2>&1; then
+  # --untracked-files=no: the commit takes only what was staged above, so there is no reason
+  # to scan the working tree. EduFlow (2026-10-31) had many thousands of changed paths from
+  # a verification run, and a commit there ran for minutes.
+  if git -C "$p" commit -q --untracked-files=no -m "governance: update from claude-governance-kit ($kit_rev)" > "$log" 2>&1; then
     echo "  ✓ $name — updated and committed: ${summary%% (kit*}"; updated=$((updated + 1))
   else
     echo "  ✗ $name — updated but the commit was refused (staged, not committed):"

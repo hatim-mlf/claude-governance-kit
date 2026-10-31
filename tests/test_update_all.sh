@@ -36,6 +36,9 @@ cmp -s "$a/scripts/pre-commit.sh" "$KIT_ROOT/scripts/pre-commit.sh" || fail "alp
 git -C "$a" log -1 --format=%s | grep -q "update from claude-governance-kit" || fail "alpha's commit message is wrong"
 [ "$(git -C "$a" status --porcelain --untracked-files=all)" = "?? src/work-in-progress.ts" ] || { git -C "$a" status --short >&2; fail "alpha's own work was touched or committed"; }
 ok "--apply updates and commits only the kit's files, leaving the project's own work alone"
+# The commit flag is the contract: without it, a project with a huge working tree (EduFlow,
+# thousands of untracked paths) stalls for minutes while git scans files it will not commit.
+grep -qE 'git -C "\$p" commit .*--untracked-files=no' "$KIT_ROOT/update-all.sh" || fail "update-all's commit scans untracked files"
 
 grep -q "beta.*diverged" "$SCRATCH/run" || { cat "$SCRATCH/run" >&2; fail "beta's divergence not reported"; }
 grep -q "beta's own fix" "$b/scripts/check-reports.sh" || fail "beta's own fix was overwritten"
