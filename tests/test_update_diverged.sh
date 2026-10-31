@@ -50,3 +50,14 @@ bash "$kit/update.sh" "$target" > "$SCRATCH/p.log" 2>&1 || { cat "$SCRATCH/p.log
 grep -q "project fix the kit never got" scripts/check-reports.sh || fail "projectOwned file was overwritten"
 grep -q "project-owned.*scripts/check-reports.sh" "$SCRATCH/p.log" || { cat "$SCRATCH/p.log" >&2; fail "projectOwned file not reported as skipped"; }
 ok "kit.projectOwned files are kept and the update succeeds"
+
+# A kit file the project deliberately does not have stays absent when it is listed in
+# kit.projectOwned. GLOOD deletes project-code-review (it has its own) and the update
+# kept re-adding it.
+rm -rf .claude/skills/project-code-review
+python3 -I -c 'import json; c=json.load(open("governance.config.json")); c["kit"]["projectOwned"].append(".claude/skills/project-code-review/SKILL.md"); json.dump(c,open("governance.config.json","w"),indent=2)'
+git add -A && git commit -qm "drop project-code-review" --no-verify
+bash "$kit/update.sh" "$target" > "$SCRATCH/a.log" 2>&1 || { cat "$SCRATCH/a.log" >&2; fail "update failed"; }
+[ ! -e .claude/skills/project-code-review/SKILL.md ] || fail "a projectOwned file the project removed was added back"
+grep -q "project-code-review.*absent by choice" "$SCRATCH/a.log" || { cat "$SCRATCH/a.log" >&2; fail "the skipped add was not reported"; }
+ok "a projectOwned file the project removed stays removed"

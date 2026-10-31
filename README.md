@@ -68,8 +68,8 @@ A kit-owned file is replaced only when the project's copy is one the kit once sh
 If the project has improved a kit file the kit never received, that file is kept and
 listed as **diverged**. `./update.sh --collect /path/to/project` copies it back into the
 kit, so you can review it and give it to every project. A file the project keeps as its
-own version on purpose goes in `kit.projectOwned` in `governance.config.json`; the
-update then leaves it alone. Between updates, `scripts/check-kit-drift.sh` warns at
+own version on purpose, or removed on purpose, goes in `kit.projectOwned` in
+`governance.config.json`; the update then leaves it alone and never adds it back. Between updates, `scripts/check-kit-drift.sh` warns at
 commit time when a kit-owned file changes beyond the kit, so a change that should be
 mirrored is noticed when it is made.
 
