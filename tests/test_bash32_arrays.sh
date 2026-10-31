@@ -25,7 +25,7 @@ new_files        update.sh expands it only inside a length check
 dirs             tests/lib.sh: split from PATH, never empty
 "
 bad=0
-for f in "$KIT_ROOT"/scripts/*.sh "$KIT_ROOT"/update.sh "$KIT_ROOT"/install.sh "$KIT_ROOT"/tests/lib.sh; do
+for f in "$KIT_ROOT"/scripts/*.sh "$KIT_ROOT"/update.sh "$KIT_ROOT"/update-all.sh "$KIT_ROOT"/install.sh "$KIT_ROOT"/tests/lib.sh; do
   grep -qE '^set -[a-z]*u' "$f" || continue
   while IFS=: read -r n line; do
     for name in $(printf '%s\n' "$line" | grep -oE '"\$\{[A-Za-z_]+\[@\]\}"' | sed -E 's/"\$\{([A-Za-z_]+)\[@\]\}"/\1/'); do
