@@ -84,7 +84,11 @@ fi
 # the unit: projects keep their own code beside the kit's (GLOOD has app scripts in
 # scripts/maps/), and the first version of this script checked, and offered to `git
 # clean`, the whole of scripts/. That would have deleted a project's untracked work.
-owned=(); for p in "${pairs[@]}"; do owned+=("${p#*|}"); done
+# Only files this update may write count as "kit-owned" for the dirty check. A projectOwned
+# file is never written, so the project's own uncommitted work on it must not block the
+# update (EduFlow was refused over its own generator, 2026-10-31).
+owned=(.claude/governance-kit-version)
+for p in "${pairs[@]}"; do is_project_owned "${p#*|}" || owned+=("${p#*|}"); done
 # Project data the kit seeds once and never touches again (like ledger/ at install).
 seeds=("templates/obligations/README.md|obligations/README.md"
        "templates/obligations/OBLIGATIONS.md|obligations/OBLIGATIONS.md")
