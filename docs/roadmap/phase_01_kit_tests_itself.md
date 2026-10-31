@@ -60,9 +60,9 @@ on the operator's machine. Only counts cross over.
 
 | ID | Feature | Status | Notes |
 |---|---|---|---|
-| §5.1 | Baseline measurements from GLOOD (`AUDIT RESULT v1`) | 🟡 In progress | **Blocked by:** None. Run by a read-only session on the operator's Mac. Verified by the result block, with each number traceable to a section A–G. |
+| §5.1 | Baseline measurements from GLOOD (`AUDIT RESULT v1`) | 🟡 In progress | **Blocked by:** None. The operator runs `scripts/governance-audit.sh` in GLOOD and pastes the block back. The first attempt, a session on the Mac, stopped at the weekly usage limit before measuring anything. Verified by the result block, with each number traceable to a section A–G. |
 | §5.2 | A control register: every control has the failure it prevents, evidence it fired, its cost, and a decision | 🔲 Pending | **Blocked by:** §5.1. `docs/analysis/control-register.md`. Hypotheses to test, not conclusions: `grill-me` duplicates `grilling`; the three governance rules overlap and load together; `CLAUDE.md` §5 is long for a rule that fires rarely. |
 | §5.3 | Three outcome measures with baselines: evidence rate, verification lag, ceremony share | 🔲 Pending | **Blocked by:** §5.1. Computed from GLOOD's ledger, tracker and transcripts. |
-| §5.4 | `scripts/governance-audit.sh`: any governed project can audit its own controls, counts only | 🔲 Pending | **Blocked by:** §5.1 (its brief is the spec). Verified by a fixture project in `tests/`. |
+| §5.4 | `scripts/governance-audit.sh`: any governed project can audit its own controls, counts only | ✅ Done | **Blocked by:** None (written early, because the GLOOD session hit the weekly usage limit before it started, and a script costs no tokens). Read-only, never calls a model. Verified by `tests/test_governance_audit.sh`: counts are pinned on a fixture, usage is counted once per message id (summing every line overcounted ~2.7× on a real transcript), and no titles or transcript text leak. |
 | §5.5 | Cuts and merges from the register, one revertible commit each | 🔲 Pending | **Blocked by:** §5.2. The operator approves the cut list first. |
 | §5.6 | Always-loaded text has a byte cap enforced by a test | 🔲 Pending | **Blocked by:** §5.5. The baseline is set *after* the cuts, so the cap locks in the savings. Supersedes §2.2. |
