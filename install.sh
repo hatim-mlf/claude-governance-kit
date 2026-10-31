@@ -140,6 +140,8 @@ copy_new templates/MODEL_DELEGATION.md MODEL_DELEGATION.md
 copy_new templates/STRUCTURAL_PROBLEMS.md STRUCTURAL_PROBLEMS.md
 copy_new templates/FILE_SIZE_REVIEW.md FILE_SIZE_REVIEW.md
 copy_new "templates/ledger/README.md" "ledger/README.md"
+copy_new "templates/obligations/README.md" "obligations/README.md"
+copy_new "templates/obligations/OBLIGATIONS.md" "obligations/OBLIGATIONS.md"
 copy_new "templates/reports/README.md" "reports/README.md"
 copy_new "templates/reports/bugs reports/BUG_TRACKER.md" "reports/bugs reports/BUG_TRACKER.md"
 # These directories are structural, not incidental: the report classifier reads the

@@ -27,6 +27,11 @@ lines, listing what exists. Work where the answer is *found* rather than *decide
 where being wrong shows up immediately as a wrong file list rather than quietly as a
 wrong conclusion.
 
+**Recording obligations and syncing them to Notion is always this tier**, delegated to a
+`model: haiku` subagent: it writes files and pages from results it is given. The calling
+session checks `scripts/obligations.sh` and the diff; it does not redo the work. See the
+`obligations` skill.
+
 **4. Set a subagent's model explicitly.**
 
 `model: sonnet` · `model: opus` · `model: haiku` · `model: inherit`

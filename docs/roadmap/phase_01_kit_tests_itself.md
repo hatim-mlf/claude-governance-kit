@@ -66,3 +66,14 @@ on the operator's machine. Only counts cross over.
 | §5.4 | `scripts/governance-audit.sh`: any governed project can audit its own controls, counts only | ✅ Done | **Blocked by:** None (written early, because the GLOOD session hit the weekly usage limit before it started, and a script costs no tokens). Read-only, never calls a model. Verified by `tests/test_governance_audit.sh`: counts are pinned on a fixture, usage is counted once per message id (summing every line overcounted ~2.7× on a real transcript), and no titles or transcript text leak. |
 | §5.5 | Cuts and merges from the register, one revertible commit each | ✅ Done | **Blocked by:** §5.2. All approved 2026-10-31: C3 `0eba238`, C1+C2 `5f272b2`, C4+C5 `efccc3c`, C6+C7+C8 `ba62ac0`. **Measure of success:** rerun `governance-audit.sh` in GLOOD after two weeks. Governance calls per session should fall from a median of 54, with the evidence rate staying at or above 90%. |
 | §5.6 | Always-loaded text has a byte cap enforced by a test | ✅ Done | **Blocked by:** §5.5. `tests/context-budget.txt`: CLAUDE.md template 8,952 B (was 10,721), skill frontmatter 6,321 B, governance rule 3,494 B (three rules, 12,789 B, before). Supersedes §2.2. |
+
+# Phase 06 — obligations: what is owed by a date
+
+Commissioned by `prompts/SESSION_obligations.md`. Recording and sync run on Haiku.
+
+| ID | Feature | Status | Notes |
+|---|---|---|---|
+| §6.1 | Every project has `obligations/`: register, classes and due rules, seeded at install and by `update.sh` | ✅ Done | `templates/obligations/`. Verified by `tests/test_obligations.sh` and `tests/test_update.sh`. |
+| §6.2 | `scripts/obligations.sh` derives due dates, adds open ledger entries, writes `obligations.json`, warns at commit | ✅ Done | Token-free. `--check` runs in pre-commit, `--next-id` allocates ids. |
+| §6.3 | The `obligations` skill: add, sync to a Notion database plus calendar reminders, work one | ✅ Written, 🔲 not yet run against Notion | **Needs the operator:** the first sync asks where the database lives. Pass: a second sync creates no duplicates, and closing an item in the repo marks it Done in Notion and cancels its event. |
+| §6.4 | Seed GLOOD's register with what it already owes (the key rotation, 2 open entries, unverified fixes) | 🔲 Pending | **Blocked by:** §6.3. Run on Haiku in GLOOD. Success measure: the on-time close rate from the ledger, rerun with the audit in two weeks. |

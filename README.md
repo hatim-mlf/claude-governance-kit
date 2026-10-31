@@ -21,10 +21,11 @@ prevents that — as files, scripts, and hooks inside the repo, not as a service
 | Piece | What it is |
 |---|---|
 | `ledger/` | Append-only execution log — one entry per task: reserved before work, closed after, with evidence |
+| `obligations/` | What is owed by a date: a register with derived due dates, synced to Notion where calendar reminders fire (`scripts/obligations.sh`, `obligations` skill) |
 | `reports/` | Bug / error / audit / session reports, each written with its own skill |
 | `reports/bugs reports/BUG_TRACKER.md` | The live defect register, with an honest status vocabulary (fixed ≠ verified) |
 | `STRUCTURAL_PROBLEMS.md` | The second register: tooling and process defects, plus lessons |
-| `.claude/skills/` | 13 skills: six that record what happened, seven that decide what to do |
+| `.claude/skills/` | 14 skills: seven that record what happened or what is owed, seven that decide what to do |
 | `.claude/rules/` | Path-scoped invariants that load only when relevant code is opened |
 | `scripts/` | Pre-commit gate (secrets block, ledger checks), ledger-id allocator, dashboard sync |
 | `bug-tracker-dashboard/` | Local Vite/React dashboard generated from the Markdown — ledger, defects, reports, project inventory |

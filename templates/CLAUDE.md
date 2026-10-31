@@ -77,6 +77,8 @@ and a recommendation.
 - On a failed command, build, migration, or tool call, use the **error-report** skill.
 - On writing up any audit or multi-finding sweep, use the **audit-report** skill.
 - On ending, pausing, or handing off a session, use the **session-report** skill.
+- On anything owed by a date, use the **obligations** skill, delegated to a Haiku
+  subagent. Start each session with `scripts/obligations.sh`; overdue items come first.
 - On writing the prompt that will run the next session, use the **session-prompt** skill.
 - On the dashboard looking stale, or a report not appearing on it, use the
   **dashboard-sync** skill. Routine syncing is automatic in Claude Code — a `SessionEnd`

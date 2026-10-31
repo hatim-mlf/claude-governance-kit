@@ -21,6 +21,7 @@ cmp -s "$stale" "$KIT_ROOT/$stale" && fail "test setup: need a kit history with 
 echo "old rule" > .claude/rules/skills-stay-indexed.md
 echo "project rule" > .claude/rules/my-app-invariant.md
 echo "project line" >> CLAUDE.md
+rm -rf obligations   # a project installed before obligations/ existed
 git add -A && git commit -qm "older kit" --no-verify
 
 # The project's own code under scripts/ (GLOOD keeps app scripts in scripts/maps/):
@@ -43,6 +44,7 @@ cmp -s "$stale" "$KIT_ROOT/$stale" || fail "stale kit script not replaced"
 grep -q "project rule" .claude/rules/my-app-invariant.md || fail "project's own rule was touched"
 grep -q "project line" CLAUDE.md || fail "CLAUDE.md was touched"
 [ -f .claude/governance-kit-version ] || fail "kit version not recorded"
+[ -f obligations/OBLIGATIONS.md ] && [ -f obligations/README.md ] || fail "update did not create obligations/ for an older project"
 grep -q "CLAUDE.md" "$SCRATCH/u.log" || fail "hand-merge list should name CLAUDE.md"
 ok "kit files replaced, retired files removed, project files untouched"
 
