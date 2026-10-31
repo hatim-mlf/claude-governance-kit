@@ -24,7 +24,7 @@ prevents that — as files, scripts, and hooks inside the repo, not as a service
 | `reports/` | Bug / error / audit / session reports, each written with its own skill |
 | `reports/bugs reports/BUG_TRACKER.md` | The live defect register, with an honest status vocabulary (fixed ≠ verified) |
 | `STRUCTURAL_PROBLEMS.md` | The second register: tooling and process defects, plus lessons |
-| `.claude/skills/` | 14 skills: six that record what happened, eight that decide what to do |
+| `.claude/skills/` | 13 skills: six that record what happened, seven that decide what to do |
 | `.claude/rules/` | Path-scoped invariants that load only when relevant code is opened |
 | `scripts/` | Pre-commit gate (secrets block, ledger checks), ledger-id allocator, dashboard sync |
 | `bug-tracker-dashboard/` | Local Vite/React dashboard generated from the Markdown — ledger, defects, reports, project inventory |
@@ -125,5 +125,5 @@ Full description with the diagram rendered: open **`docs/index.html`** in a brow
 
 ## Licence
 
-MIT. The five vendored skills listed in `.claude/skills/UPSTREAM.md` are MIT-licensed by
+MIT. The four vendored skills listed in `.claude/skills/UPSTREAM.md` are MIT-licensed by
 Matt Pocock; provenance and licence text are in that file.

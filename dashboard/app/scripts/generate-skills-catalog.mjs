@@ -98,7 +98,7 @@ const skills = readdirSync(skillsRoot)
       supportingFiles: supporting,
       // 'unrecorded' is a finding, not a default. A skill on disk that UPSTREAM.md does
       // not mention has no recorded source, which the rule in
-      // .claude/rules/skills-stay-indexed.md exists to prevent.
+      // .claude/rules/changing-the-governance-system.md (step 2) exists to prevent.
       origin: provenance[dir] ?? 'unrecorded',
       // A skill the model can never reach on its own. Reachable only when typed.
       userInvokedOnly: /disable-model-invocation:\s*true/.test(markdown),

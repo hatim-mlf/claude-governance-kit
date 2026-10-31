@@ -17,7 +17,6 @@ provenance record at all.
 | Directory | Upstream path | Files |
 |---|---|---|
 | `grilling/` | `skills/productivity/grilling/` | `SKILL.md` |
-| `grill-me/` | `skills/productivity/grill-me/` | `SKILL.md` |
 | `writing-for-agents/` | `skills/productivity/writing-for-agents/` | `SKILL.md`, `SKILL-MECHANICS.md` |
 | `diagnosing-bugs/` | `skills/engineering/diagnosing-bugs/` | `SKILL.md`, `scripts/hitl-loop.template.sh` |
 | `codebase-design/` | `skills/engineering/codebase-design/` | `SKILL.md`, `DEEPENING.md`, `DESIGN-IT-TWICE.md` |
@@ -31,7 +30,7 @@ not drift.
 
 ```sh
 git clone --depth 1 https://github.com/mattpocock/skills /tmp/mp-skills
-for pair in productivity/grilling productivity/grill-me productivity/writing-for-agents \
+for pair in productivity/grilling productivity/writing-for-agents \
             engineering/diagnosing-bugs engineering/codebase-design; do
   diff -r --exclude=agents "/tmp/mp-skills/skills/$pair" ".claude/skills/$(basename "$pair")"
 done
@@ -86,7 +85,7 @@ it, so an unrecorded one is an unreviewed dependency with write access to the re
 Writing a skill here from scratch is always fine — record it in the *Written here* table
 above.
 
-The obligation is enforced by `.claude/rules/skills-stay-indexed.md`, and checked by the
+The obligation is enforced by step 2 of `.claude/rules/changing-the-governance-system.md`, and checked by the
 catalog generator described below.
 
 ## Why vendored and not installed as a plugin
@@ -118,7 +117,7 @@ named files the same way.
 cross-references them against the directories on disk. **The section a row sits in
 decides its origin**, so a row in the wrong section is silently mis-labelled — and a
 skill with no row at all comes out `unrecorded` and is named in the generator's output.
-That is the mechanism behind `.claude/rules/skills-stay-indexed.md`: adding a skill
+That is the mechanism behind step 2 of `.claude/rules/changing-the-governance-system.md`: adding a skill
 quietly is not possible, because the next sync says so.
 
 ---
