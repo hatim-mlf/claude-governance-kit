@@ -101,10 +101,9 @@ publishes the reservation as soon as it is written, week index included. **In an
 runtime without that hook, also run the command right after reserving.** An entry nobody
 can see is an entry nobody knew was in flight.
 
-**Get the id from the file, never from memory or from context** — run
-`scripts/next-ledger-id.sh` and take what it prints. More than one session can be
-running in this repository at once, so the highest id you remember is not necessarily
-the highest id there is.
+**Allocate an id before writing** — run `scripts/next-ledger-id.sh` and take what it
+prints. Each call consumes an id, including when no entry is written. Linked worktrees
+share claims; separate clones do not.
 
 **Check the session prompt's "Suggested model" line before starting.** If there isn't
 one: Sonnet for normal work, Opus for judgment calls, Haiku for mechanical work, and

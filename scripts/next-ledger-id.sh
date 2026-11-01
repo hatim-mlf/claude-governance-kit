@@ -1,62 +1,78 @@
 #!/usr/bin/env bash
 #
-# Print the next free ledger id for the current ISO week, and the ids already taken.
+# Allocate (not preview) a week-scoped ledger ID before returning it.
 #
-# WHY THIS EXISTS
-#   On 2026-08-22 two sessions reserved `2026-W34-48` nine minutes apart. Neither
-#   checked. One entry then lost its heading entirely when the two appends collided,
-#   and `git add -A` from one session committed the other's half-written work.
+# Why: on 2026-08-22 two sessions reserved 2026-W34-48 nine minutes apart; one entry lost
+# its heading when the appends collided. Reading the highest id off the files only
+# narrowed the window: two sessions that read before either wrote still got the same id.
+# EduFlow, which runs several sessions in linked worktrees, replaced the preview with a
+# claim. `scripts/check-ledger-entries.sh` remains the commit-time backstop.
 #
-#   "Check before reserving" is the rule. This is what makes checking a single command
-#   instead of a thing to remember, because a rule that is inconvenient to follow is
-#   followed until it is busy. `scripts/check-ledger-entries.sh` catches a duplicate at
-#   commit time as the backstop; this stops one being created at all.
-#
-# WHY IT PRINTS THE TAKEN IDS TOO
-#   The next id is the answer, but a session that has been running for hours may have
-#   context that disagrees with the file. Seeing the last few real ids makes a stale
-#   assumption visible rather than silently overridden.
-#
-# USAGE
-#   scripts/next-ledger-id.sh            # current ISO week
-#   scripts/next-ledger-id.sh 2026-W33   # a specific week
-#
-set -uo pipefail
+# Atomic mkdir claims prevent concurrent sessions from receiving the same ID.
+# Claims live in Git's common directory so linked worktrees share them. Never
+# remove claims: even a caller interrupted before writing Markdown consumed its ID.
+# Tracked daily headings remain the execution record and seed fresh clones.
+# Usage: scripts/next-ledger-id.sh [YYYY-Www]
+set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   echo "next-ledger-id: not inside a git repository." >&2; exit 1;
 }
-
 week="${1:-$(date +%G-W%V)}"
-week_dir="${root}/ledger/${week}"
-
-# One folder per ISO week, one file per day inside it. Ids stay week-scoped and
-# sequential across the whole week, so a citation resolves without naming a day —
-# which is what lets the split happen without breaking every reference.
-if [ ! -d "$week_dir" ]; then
-  echo "No folder for ${week} yet — create ledger/${week}/$(date +%F).md and start at ${week}-01."
-  exit 0
+if [ "$#" -gt 1 ] || [[ ! "$week" =~ ^[0-9]{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$ ]]; then
+  echo "Usage: scripts/next-ledger-id.sh [YYYY-Www] (week 01–53)" >&2
+  exit 2
 fi
 
-# Ids are read off the file, never counted. A deleted entry leaves a gap, and reusing
-# that gap would break every citation pointing at the old occupant — ledger/README.md
-# says ids are never reused, so this takes max+1 rather than the first free slot.
-taken="$(cat "${week_dir}"/*.md 2>/dev/null | grep -oE "^## ${week}-[0-9]+" | sed "s|^## ${week}-||" | sort -n)"
-
-if [ -z "$taken" ]; then
-  echo "${week}-01"
-  exit 0
-fi
-
-highest="$(printf '%s\n' "$taken" | tail -1)"
-next=$(( 10#${highest} + 1 ))
-
+common="$(git rev-parse --git-common-dir)"
+common="$(cd "$common" && pwd -P)"
+claims="$common/ledger-id-claims/$week"
+mkdir -p "$claims"
+week_dir="$root/ledger/$week"
+taken="$(grep -h -oE "^## ${week}-[0-9]+" "$week_dir"/*.md 2>/dev/null | sed "s|^## ${week}-||" | sort -n || true)"
 duplicates="$(printf '%s\n' "$taken" | uniq -d)"
 if [ -n "$duplicates" ]; then
-  echo "WARNING — ${week} already contains duplicate ids:" >&2
-  printf '  %s-%s\n' "$week" $duplicates >&2
-  echo "  Resolve those before reserving; see ledger/README.md." >&2
+  echo "next-ledger-id: duplicate ledger IDs in $week; resolve before allocating:" >&2
+  printf '%s\n' "$duplicates" >&2
+  exit 1
 fi
 
-printf 'Taken (last 5): %s\n' "$(printf '%s\n' "$taken" | tail -5 | sed "s|^|${week}-|" | tr '\n' ' ')"
-printf 'NEXT FREE:      %s-%02d\n' "$week" "$next"
+# Seed from every registered worktree, including pre-upgrade headings that have
+# no claim yet. NUL-delimited porcelain preserves paths containing spaces.
+scan_worktrees() {
+  local highest=0 record worktree ids number value
+  while IFS= read -r -d '' record; do
+    case "$record" in
+      'worktree '*)
+        worktree="${record#worktree }"
+        ids="$(grep -h -oE "^## ${week}-[0-9]+" "$worktree/ledger/$week"/*.md 2>/dev/null | sed "s|^## ${week}-||" | sort -n || true)"
+        for number in $ids; do
+          value=$((10#$number))
+          [ "$value" -le "$highest" ] || highest=$value
+        done
+        ;;
+    esac
+  done
+  printf '%d' "$highest"
+}
+highest="$(git worktree list --porcelain -z | scan_worktrees)"
+for claim in "$claims"/*; do
+  number="${claim##*/}"
+  [[ "$number" =~ ^[0-9]+$ ]] || continue
+  value=$((10#$number))
+  [ "$value" -le "$highest" ] || highest=$value
+done
+
+next=$((highest + 1))
+while :; do
+  printf -v number '%02d' "$next"
+  if mkdir "$claims/$number" 2>/dev/null; then
+    printf 'ALLOCATED: %s-%s\n' "$week" "$number"
+    exit 0
+  fi
+  if [ ! -d "$claims/$number" ]; then
+    echo "next-ledger-id: cannot create claim $claims/$number" >&2
+    exit 1
+  fi
+  next=$((next + 1))
+done
