@@ -108,7 +108,11 @@ fi
 
 # Every blob the kit has ever committed, to tell "behind" from "diverged".
 kit_blobs=$(mktemp); trap 'rm -f "$kit_blobs"' EXIT
-git -C "$KIT_ROOT" rev-list --all --objects 2>/dev/null | cut -d' ' -f1 | sort -u > "$kit_blobs"
+# Only the kit's checked-out branch (update-all.sh insists it is main) counts as "what the
+# kit shipped". Never --all: a review branch made by --collect holds a project's OWN
+# versions, and counting it made EduFlow's 15 improved files look "behind", so they were
+# replaced with the kit's older ones (2026-11-01).
+git -C "$KIT_ROOT" rev-list --objects HEAD 2>/dev/null | cut -d' ' -f1 | sort -u > "$kit_blobs"
 in_kit_history() { grep -qxF "$(git hash-object --no-filters -- "$1")" "$kit_blobs"; }
 
 if [ "$COLLECT" -eq 1 ]; then
