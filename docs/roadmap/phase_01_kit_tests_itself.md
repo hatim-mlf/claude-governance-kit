@@ -108,7 +108,7 @@ Found by `./update-all.sh --scan ~/Documents`. daftira and daftir only left sync
 | GLOOD | `~/Documents/GLOOD` | Updated and committed (on `feat/glood-plus`). Declares 22 tailored kit files plus `project-code-review` in `kit.projectOwned` | Hand-update GLOOD's tailored files with the kit's changes (row below); 4 overdue obligations |
 | PlanScol | `~/Documents/PlanScol` | Updated and committed | Check `CLAUDE.md`/`UPSTREAM.md` for the three retired rule names and `grill-me` |
 | launchpad | `~/Documents/launchpad` | Updated and committed | Same check as PlanScol |
-| EduFlow | `~/Documents/IOS APP/EduFlow` | **Not updated: 15 kit files diverged.** Its generator fix is committed (`3b82584e`, on `codex/s3-classes-students`). The 15 files are on `mirror/eduflow` and reviewed in `docs/analysis/eduflow-mirror-review.md`: real improvements (concurrency-safe ids, strict publication, a single-writer sync, a timestamp library) that depend on three modules not yet collected | Operator decisions in the review, then integration in tested slices. Don't declare these files `projectOwned` yet |
+| EduFlow | `~/Documents/IOS APP/EduFlow` (formerly daftira; `daftira-rename` is a separate, non-git folder) | **Not kit-updated: 15 kit files diverged** (`mirror/eduflow`; see `docs/analysis/eduflow-mirror-review.md`). On 2026-11-01, by Codex in EduFlow: a disk audit (`reports/audits/2026-10-31_eduflow_disk_size.md`, 169 GB, of which 118 GB is `docs/pipeline/proposals/`); an ignore rule for intermediate `_step_`/`_revNN_` outputs; the obligations protocol copied from the kit; a 30-entry overdue backlog reviewed (26 closed with evidence or a gate, 4 abandoned with reasons; `reports/audits/2026-11-01_overdue_ledger_review.md`). Now 26 obligations owed, 0 overdue. The unmerged snapshot `8cef98d8` is tagged `keep/worktree-8cef98d8` | Prompt 2 (integrate EduFlow's improvements); the first Notion sync; O-1 after the next pipeline run |
 
 ## Open decisions for the operator
 
@@ -140,3 +140,14 @@ Found by `./update-all.sh --scan ~/Documents`. daftira and daftir only left sync
 | A script is tested only on Linux | Run CI on macOS with `/bin/bash` 3.2 first on PATH (`.github/workflows/test.yml`) | `update.sh` aborted on GLOOD on an empty array; Linux CI never saw it | helped · high: the guard test then caught two more in `update-all.sh` |
 | An update overwrites kit files in a project | Replace only content found in the kit's history; keep and list anything else (`update.sh`) | GLOOD's generator was ahead of the kit and would have been overwritten | helped · high |
 | A fix is proposed for a slow command | Find the real cause before adopting it (`changing-the-governance-system.md`, evidence first) | `--untracked-files=no` had no observed effect on EduFlow; the cause was 35.85 GiB of history and thousands of modified files | helped · high: PR #13 shipped the real fix instead |
+
+## Lessons from EduFlow's backlog review (2026-11-01), queued for Prompt 2
+
+| Cue | Lesson | Evidence | Verdict |
+|---|---|---|---|
+| A session works in a temporary worktree | Evidence named in `Verified by:` is written inside the repository (or another persistent folder), never only in `/tmp`; a check warns when a `Verified by:` path does not exist (`check-ledger-entries.sh`) | 4 EduFlow entries (W42-01/18/22/133) became unprovable: their worktrees under `/private/tmp` had been cleared | helped · high: the review could only abandon them |
+| Pruning worktrees | Tag every detached worktree commit that is on no branch before pruning (a helper beside `update-all.sh`) | `8cef98d8`, an unmerged dirty-tree snapshot, would have become garbage-collectable | helped · high |
+| Closing many entries at once | `publish-ledger-entry.sh` takes several ids: sync once, verify each | 30 entries published one by one, one full dashboard sync each, in a very slow repository | no observed effect yet · medium: proposed, not built |
+| An entry is stuck waiting on a person | It closes with a "Not verified — <gate>" line and the gate becomes an obligation (`ledger/README.md`, `obligations` skill) | 22 of EduFlow's 30 stuck entries resolved this way (O-5 to O-26) | helped · high |
+| An agent is pointed at evidence | The agent checks that the evidence matches the entry's subject before citing it | W42-18: the suggested manifest builders were for Mathematics CH01, not SVT; the agent caught it | helped · high |
+
