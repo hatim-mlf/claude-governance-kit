@@ -6,7 +6,8 @@ flowchart TD
     end
 
     subgraph Repo["Governed repository"]
-        L["ledger/YYYY-Www.md — reserve → close, with evidence"]
+        L["ledger/YYYY-Www/YYYY-MM-DD.md — reserve → close, with evidence"]
+        OB["obligations/OBLIGATIONS.md — what is owed, by when"]
         RP["reports/ — bugs · errors · audits · sessions"]
         TR["BUG_TRACKER.md + STRUCTURAL_PROBLEMS.md"]
         CF["governance.config.json — roots + sentinels"]
@@ -16,6 +17,12 @@ flowchart TD
         PC["scripts/pre-commit.sh — BLOCKS secrets, WARNS stale ledger"]
         NH["scripts/next-ledger-id.sh — collision-proof ids"]
         HK[".claude/settings.json — SessionEnd + Stop hooks"]
+        PO["scripts/post-commit.sh → obligations-sync.sh — no model, no tokens"]
+    end
+
+    subgraph Out["Outside the repository"]
+        NO["Notion Obligations database (Calendar events: obligations skill)"]
+        AR["Apple Reminders — list Obligations"]
     end
 
     subgraph Dash["bug-tracker-dashboard/app"]
@@ -29,6 +36,10 @@ flowchart TD
     RL -. loads on matching files .-> SK
     SK --> RP --> TR
     NH --> L
+    SK --> OB
+    OB -. commit touching obligations/ or ledger/ .-> PO
+    PO --> NO
+    PO --> AR
     PC -. gates every commit .-> Repo
     HK --> DS --> SY
     L --> SY
