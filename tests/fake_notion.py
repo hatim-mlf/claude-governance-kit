@@ -1,8 +1,12 @@
 """A minimal stand-in for the Notion API, for tests/test_obligations_sync.sh.
 
-Implements only what scripts/obligations-sync.sh calls: create a database, query a
-database (filter on Project), create a page, update a page. State is in memory; every
-request is appended to the log file named by argv[2] as one JSON line.
+Implements only what scripts/obligations-sync.sh calls: create a database, read its
+schema, query it (filter on Project), create a page, update a page. State is in memory;
+every request is appended to the log file named by argv[2] as one JSON line.
+
+Like the real API, a query filtering on a Project option the database does not have yet
+is a 400 validation_error, and creating a page adds its Project option. A second project
+syncing into the shared database failed exactly so (2026-11-01, PlanScol and launchpad).
 """
 import json, sys, uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -30,22 +34,32 @@ class H(BaseHTTPRequestHandler):
         if self.headers.get("Authorization") != "Bearer test-key":
             return self.reply(401, {"object": "error", "message": "unauthorized"})
         if self.path == "/v1/databases":
-            i = "db-" + uuid.uuid4().hex[:8]; dbs[i] = b; return self.reply(200, {"object": "database", "id": i})
+            i = "db-" + uuid.uuid4().hex[:8]; dbs[i] = set(); return self.reply(200, {"object": "database", "id": i})
         if self.path.startswith("/v1/databases/") and self.path.endswith("/query"):
             proj = b["filter"]["select"]["equals"]
+            if proj not in dbs.get(self.path.split("/")[3], set()):
+                return self.reply(400, {"object": "error", "status": 400, "code": "validation_error",
+                                        "message": f'select option "{proj}" not found for property "Project".'})
             res = [{"id": k, "properties": v} for k, v in pages.items()
                    if v.get("Project", {}).get("select", {}).get("name") == proj]
             return self.reply(200, {"results": res, "has_more": False, "next_cursor": None})
         if self.path == "/v1/pages":
-            i = "page-" + uuid.uuid4().hex[:8]; pages[i] = b["properties"]; return self.reply(200, {"id": i})
+            i = "page-" + uuid.uuid4().hex[:8]; pages[i] = b["properties"]
+            dbs.setdefault(b["parent"]["database_id"], set()).add(b["properties"]["Project"]["select"]["name"])
+            return self.reply(200, {"id": i})
         self.reply(404, {})
     def do_PATCH(self):
         b = self.body(); self.record(b)
         i = self.path.rsplit("/", 1)[-1]
         if i not in pages: return self.reply(404, {})
         pages[i].update(b["properties"]); self.reply(200, {"id": i})
-    def do_GET(self):  # test inspection only
-        if self.path == "/_state":
+    def do_GET(self):
+        if self.path.startswith("/v1/databases/"):
+            i = self.path.split("/")[3]
+            if i not in dbs: return self.reply(404, {})
+            opts = [{"name": n} for n in sorted(dbs[i])]
+            return self.reply(200, {"object": "database", "id": i, "properties": {"Project": {"select": {"options": opts}}}})
+        if self.path == "/_state":  # test inspection only
             out = {text(v["Id"]): {"status": v["Status"]["select"]["name"], "due": (v.get("Due", {}).get("date") or {}).get("start"),
                                     "project": v["Project"]["select"]["name"], "name": text(v["Name"])} for v in pages.values()}
             return self.reply(200, out)

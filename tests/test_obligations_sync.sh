@@ -82,3 +82,15 @@ git add -A && NOTION_TOKEN=test-key git commit -qm "obligations: O-3" --no-verif
 for _ in $(seq 50); do [ "$(wc -l < "$SCRATCH/requests.log")" -gt "$before" ] && grep -q '"O-3"' <<< "$(state)" && break; sleep 0.2; done
 grep -q '"O-3"' <<< "$(state)" || fail "a commit touching obligations/ did not trigger the sync"
 ok "a commit touching obligations/ syncs in the background"
+
+# A second project in the same database. Notion rejects a query on a Project option the
+# database has never seen, so PlanScol and launchpad failed their first sync
+# (2026-11-01) after GLOOD's had created only its own option.
+python3 -I -c 'import json; c=json.load(open("governance.config.json")); c["projectName"]="Second Project — Long Name"; json.dump(c,open("governance.config.json","w"),indent=2)'
+before=$(creates)
+NOTION_TOKEN=test-key ./scripts/obligations-sync.sh > "$SCRATCH/sync4" 2>&1 || { cat "$SCRATCH/sync4" >&2; fail "a second project's first sync failed"; }
+[ "$(creates)" -gt "$before" ] || fail "the second project's obligations were not created"
+NOTION_TOKEN=test-key ./scripts/obligations-sync.sh > "$SCRATCH/sync5" 2>&1 || { cat "$SCRATCH/sync5" >&2; fail "the second project's re-sync failed"; }
+after=$(creates); NOTION_TOKEN=test-key ./scripts/obligations-sync.sh > /dev/null 2>&1
+[ "$(creates)" -eq "$after" ] || fail "the second project's re-sync created duplicates"
+ok "a second project's first sync into the shared database succeeds"
