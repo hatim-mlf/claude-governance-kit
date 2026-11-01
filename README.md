@@ -21,7 +21,7 @@ prevents that — as files, scripts, and hooks inside the repo, not as a service
 | Piece | What it is |
 |---|---|
 | `ledger/` | Append-only execution log — one entry per task: reserved before work, closed after, with evidence |
-| `obligations/` | What is owed by a date: a register with derived due dates, synced to Notion where calendar reminders fire (`scripts/obligations.sh`, `obligations` skill) |
+| `obligations/` | What is owed by a date: a register with derived due dates (`scripts/obligations.sh`), mirrored automatically after each commit to Notion and Apple Reminders (`scripts/obligations-sync.sh`, run by the post-commit hook), with Notion Calendar events from the `obligations` skill |
 | `reports/` | Bug / error / audit / session reports, each written with its own skill |
 | `reports/bugs reports/BUG_TRACKER.md` | The live defect register, with an honest status vocabulary (fixed ≠ verified) |
 | `STRUCTURAL_PROBLEMS.md` | The second register: tooling and process defects, plus lessons |

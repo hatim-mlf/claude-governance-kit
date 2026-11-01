@@ -20,29 +20,27 @@ cd "$root"
 hooks_dir=$(git rev-parse --git-path hooks)
 mkdir -p "$hooks_dir"
 
-src="$root/scripts/pre-commit.sh"
-dst="$hooks_dir/pre-commit"
-
-[ -f "$src" ] || { echo "Missing $src" >&2; exit 1; }
-chmod +x "$src"
-
-# Preserve any pre-existing hook rather than silently destroying it.
-if [ -e "$dst" ] && [ ! -L "$dst" ]; then
-  backup="$dst.replaced-$(date +%Y%m%d-%H%M%S)"
-  mv "$dst" "$backup"
-  echo "Existing hook moved to: $backup"
-fi
-
-# Link relatively, never absolutely. An absolute target bakes in whatever
-# mount point the installer happened to run from, which breaks the moment the
-# repo is opened from a different path — a copied backup folder, a different
-# machine, or a tool that mounts the tree elsewhere.
-rel=$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$src" "$hooks_dir" 2>/dev/null || true)
-if [ -n "$rel" ]; then
-  ln -sf "$rel" "$dst"
-else
-  ln -sf "$src" "$dst"   # fallback: no python3 available
-fi
+link_hook() {  # link_hook NAME — scripts/NAME.sh becomes .git/hooks/NAME
+  local src="$root/scripts/$1.sh" dst="$hooks_dir/$1" rel
+  [ -f "$src" ] || { echo "Missing $src" >&2; return 1; }
+  chmod +x "$src"
+  # Preserve any pre-existing hook rather than silently destroying it.
+  if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+    backup="$dst.replaced-$(date +%Y%m%d-%H%M%S)"
+    mv "$dst" "$backup"
+    echo "Existing hook moved to: $backup"
+  fi
+  # Link relatively, never absolutely. An absolute target bakes in whatever
+  # mount point the installer happened to run from, which breaks the moment the
+  # repo is opened from a different path — a copied backup folder, a different
+  # machine, or a tool that mounts the tree elsewhere.
+  rel=$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$src" "$hooks_dir" 2>/dev/null || true)
+  if [ -n "$rel" ]; then ln -sf "$rel" "$dst"; else ln -sf "$src" "$dst"; fi
+}
+link_hook pre-commit
+# post-commit syncs the obligations to Notion and Apple Reminders after a commit that
+# touches obligations/ or ledger/. Optional: absent in an older checkout.
+[ -f "$root/scripts/post-commit.sh" ] && link_hook post-commit && echo "Installed: post-commit -> scripts/post-commit.sh (obligations sync)"
 
 echo "Installed: pre-commit -> scripts/pre-commit.sh"
 echo

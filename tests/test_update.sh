@@ -22,6 +22,7 @@ echo "old rule" > .claude/rules/skills-stay-indexed.md
 echo "project rule" > .claude/rules/my-app-invariant.md
 echo "project line" >> CLAUDE.md
 rm -rf obligations   # a project installed before obligations/ existed
+rm -f .git/hooks/post-commit                       # ... and before the post-commit hook
 git add -A && git commit -qm "older kit" --no-verify
 
 # The project's own code under scripts/ (GLOOD keeps app scripts in scripts/maps/):
@@ -45,6 +46,7 @@ grep -q "project rule" .claude/rules/my-app-invariant.md || fail "project's own 
 grep -q "project line" CLAUDE.md || fail "CLAUDE.md was touched"
 [ -f .claude/governance-kit-version ] || fail "kit version not recorded"
 [ -f obligations/OBLIGATIONS.md ] && [ -f obligations/README.md ] || fail "update did not create obligations/ for an older project"
+[ -L .git/hooks/post-commit ] || fail "update did not link the post-commit hook (obligations sync) in an older project"
 grep -q "CLAUDE.md" "$SCRATCH/u.log" || fail "hand-merge list should name CLAUDE.md"
 ok "kit files replaced, retired files removed, project files untouched"
 
