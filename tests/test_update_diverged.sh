@@ -75,11 +75,12 @@ ok "an uncommitted change to a projectOwned file does not block the update"
 # "behind", and update.sh replaced them with the kit's older versions.
 echo "// project's own improvement" >> scripts/check-ledger-entries.sh
 git add -A && git commit -qm "project improves a kit file" --no-verify
-mainbranch=$(git -C "$kit" rev-parse --abbrev-ref HEAD)
+# Return by commit, not by name: CI checks out a detached commit, where the "name" is HEAD.
+start=$(git -C "$kit" rev-parse HEAD)
 git -C "$kit" checkout -q -b mirror/project
 cp scripts/check-ledger-entries.sh "$kit/scripts/check-ledger-entries.sh"
 git -C "$kit" -c user.email=t@t -c user.name=t commit -qam "mirror: the project's version"
-git -C "$kit" checkout -q "$mainbranch"
+git -C "$kit" checkout -q "$start"
 bash "$kit/update.sh" "$target" > "$SCRATCH/m.log" 2>&1 || true
 grep -q "project's own improvement" scripts/check-ledger-entries.sh || { cat "$SCRATCH/m.log" >&2; fail "a version found only on a kit review branch was treated as the kit's, and overwritten"; }
 grep -q "diverged.*scripts/check-ledger-entries.sh" "$SCRATCH/m.log" || { cat "$SCRATCH/m.log" >&2; fail "it should be listed as diverged"; }
