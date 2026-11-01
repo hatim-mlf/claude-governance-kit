@@ -51,6 +51,15 @@
         }
       }
     },
+    "notion": {
+      "type": "object",
+      "description": "Where scripts/obligations-sync.sh mirrors the obligations register (run by the post-commit hook). The Notion key is never stored here: it comes from $NOTION_TOKEN or the macOS Keychain service claude-governance-notion.",
+      "additionalProperties": false,
+      "properties": {
+        "database": { "type": "string", "description": "The Obligations database id, printed by scripts/obligations-sync.sh --setup. One database serves every project; the Project property separates them." },
+        "reminders": { "type": "boolean", "description": "Also mirror owed obligations to Apple Reminders (list 'Obligations'), so alerts reach the operator's phone. macOS only." }
+      }
+    },
     "pathAliases": {
       "type": "array",
       "description": "Paths this project moved after ledger entries cited them. Entries are never edited, so the ledger catalog rewrites a cited path that matches `from` (a regular expression) to `to` ($1 etc. are capture groups). Applied in order.",

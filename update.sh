@@ -165,6 +165,20 @@ for r in ${retired_present[@]+"${retired_present[@]}"}; do
   [ "$DRY" -eq 1 ] || rm -rf "${TARGET:?}/$r"
 done
 
+# The post-commit hook (obligations sync) lives in .git/hooks, which no update can carry, and a
+# project's own install-hooks.sh may predate it. Link it when it is missing; never replace
+# a hook the project already has. .git/hooks is not tracked, so this adds nothing to undo.
+hooks_dir=$(cd "$TARGET" && git rev-parse --git-path hooks)
+case "$hooks_dir" in /*) ;; *) hooks_dir="$TARGET/$hooks_dir" ;; esac
+if [ -f "$TARGET/scripts/post-commit.sh" ] && [ ! -e "$hooks_dir/post-commit" ]; then
+  act "link:     .git/hooks/post-commit -> scripts/post-commit.sh (obligations sync)"
+  if [ "$DRY" -eq 0 ]; then
+    mkdir -p "$hooks_dir"
+    rel=$(python3 -I -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$TARGET/scripts/post-commit.sh" "$hooks_dir")
+    ln -s "$rel" "$hooks_dir/post-commit"
+  fi
+fi
+
 kit_rev=$(git -C "$KIT_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)
 if [ "$DRY" -eq 0 ]; then
   if git -C "$TARGET" ls-files --error-unmatch -- "$version_file" >/dev/null 2>&1; then rewritten+=("$version_file")

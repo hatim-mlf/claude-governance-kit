@@ -14,7 +14,7 @@ Notion: the `obligations` skill syncs it, keyed by id.
 |---|---|---|
 | `OBLIGATIONS.md` | The register: one section per obligation | Sessions and the operator, through the `obligations` skill |
 | `obligations.json` | Everything owed: the register plus what the repo already implies | `scripts/obligations.sh`. Generated, never hand-edited |
-| `notion.json` | Which Notion page and calendar event each id maps to | The `obligations` skill's sync |
+| (Notion, Apple Reminders) | The same obligations where reminders fire, matched by id | `scripts/obligations-sync.sh`, automatically after each commit that touches `obligations/` or `ledger/`. Nothing is written back here |
 
 ## An obligation
 
@@ -60,6 +60,15 @@ rarely typed and never forgotten.
 
 Derived items close themselves when the entry closes. A derived item can't be closed
 from Notion, because closing a ledger entry needs its closing block.
+
+## Reminders, automatically
+
+After any commit that touches `obligations/` or `ledger/`, git's post-commit hook runs
+`scripts/obligations-sync.sh` in the background. It updates the Notion **Obligations**
+database (one page per obligation, by id) and, when `"reminders": true`, the Apple Reminders
+list **Obligations**, which alerts your phone through iCloud. It needs no Claude session and
+costs no tokens. Notion Calendar events are created by the `obligations` skill, because the
+Notion API cannot make them. Setup, once: see `.claude/skills/obligations/SKILL.md`.
 
 ## When a reminder fires
 
