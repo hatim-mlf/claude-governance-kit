@@ -73,8 +73,9 @@ written afterwards is a summary, and there is already a place for summaries.
 
 ## Reserving an entry
 
-Get the id from the file, never from memory — more than one session can be running at
-once:
+Allocate an id with the command below. It claims the id immediately, even if the
+session stops before writing the entry. Claims are shared by linked worktrees and
+must not be removed; separate clones do not share claims:
 
 ```bash
 scripts/next-ledger-id.sh
