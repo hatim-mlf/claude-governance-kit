@@ -100,6 +100,7 @@ flowchart TD
 
     subgraph Repo["Governed repository"]
         L["ledger/YYYY-Www/YYYY-MM-DD.md<br/>reserve → close, with evidence"]
+        OB["obligations/OBLIGATIONS.md<br/>what is owed, by when"]
         R["reports/{bugs,errors,audits,sessions}"]
         T["BUG_TRACKER.md + STRUCTURAL_PROBLEMS.md"]
         C["governance.config.json"]
@@ -109,6 +110,12 @@ flowchart TD
         PC["pre-commit hook<br/>blocks secrets · warns on stale ledger"]
         HK["SessionEnd + Stop hooks<br/>.claude/settings.json"]
         PB["publish-ledger-entry.sh<br/>every runtime · verifies id + status"]
+        PO["post-commit → obligations-sync.sh<br/>no model, no tokens"]
+    end
+
+    subgraph Out["Outside the repository"]
+        NO["Notion Obligations database"]
+        AR["Apple Reminders"]
     end
 
     subgraph Dash["bug-tracker-dashboard/app"]
@@ -122,6 +129,10 @@ flowchart TD
     HK -->|"scripts/dashboard-sync.sh"| G
     PB -->|"index + sync, then check"| G
     L --> PB
+    S --> OB
+    OB -. commit .-> PO
+    PO --> NO
+    PO --> AR
     L --> G
     R --> G
     T --> G
