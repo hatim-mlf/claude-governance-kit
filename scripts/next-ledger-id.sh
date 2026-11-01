@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
+#
 # Allocate (not preview) a week-scoped ledger ID before returning it.
+#
+# Why: on 2026-08-22 two sessions reserved 2026-W34-48 nine minutes apart; one entry lost
+# its heading when the appends collided. Reading the highest id off the files only
+# narrowed the window: two sessions that read before either wrote still got the same id.
+# EduFlow, which runs several sessions in linked worktrees, replaced the preview with a
+# claim. `scripts/check-ledger-entries.sh` remains the commit-time backstop.
+#
 # Atomic mkdir claims prevent concurrent sessions from receiving the same ID.
 # Claims live in Git's common directory so linked worktrees share them. Never
 # remove claims: even a caller interrupted before writing Markdown consumed its ID.
