@@ -63,7 +63,10 @@ kit_path_for() {
 }
 
 blobs=$(mktemp); trap 'rm -f "$blobs"' EXIT
-git -C "$kit" rev-list --all --objects 2>/dev/null | cut -d' ' -f1 | sort -u > "$blobs"
+# The kit's default branch only: a review branch (mirror/<project>) holds projects' own
+# versions, and counting them would hide exactly the drift this check exists to report.
+ref=$(git -C "$kit" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || echo HEAD)
+git -C "$kit" rev-list --objects "$ref" 2>/dev/null | cut -d' ' -f1 | sort -u > "$blobs"
 
 findings=()
 while IFS= read -r -d '' f; do

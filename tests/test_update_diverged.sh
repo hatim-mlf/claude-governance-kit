@@ -68,3 +68,19 @@ echo "// work in progress" >> scripts/check-reports.sh      # listed in kit.proj
 bash "$kit/update.sh" --dry-run "$target" > "$SCRATCH/w.log" 2>&1 || { cat "$SCRATCH/w.log" >&2; fail "an uncommitted projectOwned file blocked the update"; }
 git checkout -q -- scripts/check-reports.sh
 ok "an uncommitted change to a projectOwned file does not block the update"
+
+# A review branch in the kit (mirror/<project>, made by --collect) holds the project's own
+# versions. Those must not count as "the kit once shipped this": only the kit's checked-out
+# branch is the kit. On 2026-11-01, mirror/eduflow made EduFlow's 15 improved files look
+# "behind", and update.sh replaced them with the kit's older versions.
+echo "// project's own improvement" >> scripts/check-ledger-entries.sh
+git add -A && git commit -qm "project improves a kit file" --no-verify
+mainbranch=$(git -C "$kit" rev-parse --abbrev-ref HEAD)
+git -C "$kit" checkout -q -b mirror/project
+cp scripts/check-ledger-entries.sh "$kit/scripts/check-ledger-entries.sh"
+git -C "$kit" -c user.email=t@t -c user.name=t commit -qam "mirror: the project's version"
+git -C "$kit" checkout -q "$mainbranch"
+bash "$kit/update.sh" "$target" > "$SCRATCH/m.log" 2>&1 || true
+grep -q "project's own improvement" scripts/check-ledger-entries.sh || { cat "$SCRATCH/m.log" >&2; fail "a version found only on a kit review branch was treated as the kit's, and overwritten"; }
+grep -q "diverged.*scripts/check-ledger-entries.sh" "$SCRATCH/m.log" || { cat "$SCRATCH/m.log" >&2; fail "it should be listed as diverged"; }
+ok "a version on a kit review branch is not the kit's: the project's file is kept"
