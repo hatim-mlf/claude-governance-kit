@@ -119,7 +119,12 @@ def comparable(p):
 
 try:
     existing, cursor = {}, None
-    while True:
+    # Notion rejects a query on a select option the database does not have yet (HTTP 400),
+    # and a project's option appears only with its first page: PlanScol and launchpad
+    # failed their first sync so (2026-11-01). No option means no pages to match.
+    schema = call("GET", f"/v1/databases/{database}")
+    options = {o.get("name") for o in ((schema.get("properties", {}).get("Project") or {}).get("select") or {}).get("options", [])}
+    while project in options:
         body = {"filter": {"property": "Project", "select": {"equals": project}}}
         if cursor: body["start_cursor"] = cursor
         page = call("POST", f"/v1/databases/{database}/query", body)
