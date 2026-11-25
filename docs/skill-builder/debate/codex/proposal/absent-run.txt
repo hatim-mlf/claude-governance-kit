@@ -1,0 +1,4 @@
+PASS grilling — structure valid
+Trigger eval blocked — Anthropic skill-creator is missing (scripts/run_eval.py).
+Install Anthropic's skill-creator plugin or obtain its source, review the scripts,
+then rerun with --skill-creator DIR pointing to the copy containing scripts/run_eval.py.

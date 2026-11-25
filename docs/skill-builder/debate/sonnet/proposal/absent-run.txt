@@ -1,0 +1,10 @@
+== lint (kit-owned, stdlib only)
+FAIL EVALS: fewer than 3 eval cases under evals/
+lint: FAIL (fix before the eval)
+== trigger eval: SKIPPED. Missing: Anthropic's skill-creator (needs scripts/run_eval.py).
+   Searched: $SKILL_CREATOR_DIR, ~/.claude/skills/**/skill-creator, ~/.claude/plugins/**/skill-creator, ./.claude/skills/skill-creator
+   To get it: install the skill-creator plugin (claude-plugins-official), or copy
+   github.com/anthropics/skills (skills/skill-creator), then either put it in ~/.claude/skills/
+   or export SKILL_CREATOR_DIR=/path/to/skill-creator and run this again.
+   Lint above is complete without it; only the trigger eval needs skill-creator.
+exit=3

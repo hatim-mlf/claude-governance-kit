@@ -1,0 +1,30 @@
+### backslash-in-reference
+other rc=1: FAIL backslash-in-reference — forward-slash paths: use / in SKILL.md and text references
+mine  rc=0: 
+### control-valid
+other rc=0: PASS control-valid — structure valid
+mine  rc=0: 
+### desc-flow-list
+other rc=1: FAIL desc-flow-list — description: require non-empty text
+mine  rc=0: 
+### name-integer
+other rc=1: FAIL name-integer — name: require 1–64 lowercase letters/digits with single interior hyphens
+mine  rc=0: 
+### no-pyyaml
+other rc=1: FAIL no-pyyaml — YAML dependency: install PyYAML in a venv with '/opt/anaconda3/bin/python3 -m venv .venv' and '.venv/bin/python -m pip install PyYAML', then rerun with .venv/bin/python
+mine  rc=0: 
+### orphan-reference
+other rc=1: FAIL orphan-reference — reference depth: link directly from SKILL.md to references/notes.md
+mine  rc=0: 
+### plain-single-line-colon
+other rc=1: FAIL plain-single-line-colon — strict YAML at SKILL.md:3: mapping values are not allowed here
+mine  rc=1: FAIL YAML-COLON: 'description' is an unquoted value containing ': ' (invalid strict YAML; claude.ai upload rejects it). Fix: quote it or use '>-'.
+### reference-chain
+other rc=1: FAIL reference-chain — reference depth: link directly from SKILL.md to references/b.md
+mine  rc=0: 
+### toc-plain-list
+other rc=1: FAIL toc-plain-list — reference TOC: references/big.md exceeds 100 lines
+mine  rc=0: 
+### voice-roman-i
+other rc=1: FAIL voice-roman-i — description voice: write the description in third person
+mine  rc=0: 

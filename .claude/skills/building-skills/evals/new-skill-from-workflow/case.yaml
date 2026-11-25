@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: new-skill-from-workflow
+expected_outcome: |
+  A new skill folder with a SKILL.md that passes lint_skill.py, trigger queries written before the description (with near-misses), and at least three eval cases.

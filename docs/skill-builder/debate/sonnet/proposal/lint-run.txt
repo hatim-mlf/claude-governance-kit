@@ -1,0 +1,19 @@
+FAIL skills/audit-report: YAML-COLON: 'description' is an unquoted multi-line value containing ': ' (invalid strict YAML; claude.ai upload rejects it); Claude Code may list the skill with NO description (seen on 5 kit skills), so it never triggers. Fix: quote it or use '>-'.|
+FAIL skills/bug-report: YAML-COLON: 'description' is an unquoted multi-line value containing ': ' (invalid strict YAML; claude.ai upload rejects it); Claude Code may list the skill with NO description (seen on 5 kit skills), so it never triggers. Fix: quote it or use '>-'.|
+PASS skills/codebase-design (3 warn)
+PASS skills/dashboard-sync (0 warn)
+FAIL skills/decide-by-debate: YAML-COLON: 'description' is an unquoted value containing ': ' (invalid strict YAML; claude.ai upload rejects it). Fix: quote it or use '>-'.|
+FAIL skills/deepen-the-task: YAML-COLON: 'description' is an unquoted value containing ': ' (invalid strict YAML; claude.ai upload rejects it). Fix: quote it or use '>-'.|
+PASS skills/diagnosing-bugs (0 warn)
+FAIL skills/error-report: YAML-COLON: 'description' is an unquoted multi-line value containing ': ' (invalid strict YAML; claude.ai upload rejects it); Claude Code may list the skill with NO description (seen on 5 kit skills), so it never triggers. Fix: quote it or use '>-'.|
+PASS skills/grilling (0 warn)
+PASS skills/obligations (0 warn)
+FAIL skills/project-code-review: DESC-ANGLE: description contains '<' or '>' (XML-like text)|
+FAIL skills/session-prompt: YAML-COLON: 'description' is an unquoted multi-line value containing ': ' (invalid strict YAML; claude.ai upload rejects it); Claude Code may list the skill with NO description (seen on 5 kit skills), so it never triggers. Fix: quote it or use '>-'.|
+FAIL skills/session-report: YAML-COLON: 'description' is an unquoted multi-line value containing ': ' (invalid strict YAML; claude.ai upload rejects it); Claude Code may list the skill with NO description (seen on 5 kit skills), so it never triggers. Fix: quote it or use '>-'.|
+PASS skills/tdd (0 warn)
+PASS skills/to-tickets (0 warn)
+PASS skills/writing-for-agents (0 warn)
+SKIP modules/diagnostics: no SKILL.md (support folder, not a skill)
+PASS modules/seo-geo (2 warn)
+FAIL modules/swift-xcode: YAML-COLON: 'description' is an unquoted multi-line value containing ': ' (invalid strict YAML; claude.ai upload rejects it); Claude Code may list the skill with NO description (seen on 5 kit skills), so it never triggers. Fix: quote it or use '>-'.|

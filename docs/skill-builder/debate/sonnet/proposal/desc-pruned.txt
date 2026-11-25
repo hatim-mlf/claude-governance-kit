@@ -1,0 +1,1 @@
+Take a skill idea to a shipped skill, with lint and trigger tests. Use on "make a skill", "new SKILL.md", "my skill never triggers", "fix a skill description".

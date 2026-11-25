@@ -1,0 +1,18 @@
+Absent-provider entry point — verified lint PASS and exit 2
+Missing PyYAML — verified exit 1 and 'pip install PyYAML'
+Folded description and Claude-only key — verified exit 0 and 'WARN Claude Code-only keys: model'
+Unknown key — verified exit 1 and 'unknown rogue'
+Duplicate key — verified exit 1 and 'duplicate or merged top-level'
+Reserved name — verified exit 1 and 'reserved substring'
+Name length — verified exit 1 and 'name:'
+Description length — verified exit 1 and 'description length'
+Description voice — verified exit 1 and 'description voice'
+Body length — verified exit 1 and 'body length'
+Path separators — verified exit 1 and 'forward-slash paths'
+Long reference without TOC — verified exit 1 and 'reference TOC'
+Long reference with TOC — verified exit 0 and 'structure valid'
+Nested reference — verified exit 1 and 'nested more than one directory'
+Reference without direct link — verified exit 1 and 'link directly from SKILL.md'
+Release missing eval cases — verified exit 1 and 'found 0'
+Release with three eval cases — verified exit 0 and 'release structure valid'
+Reviewed runner handoff with stub Claude CLI — verified 3 completed calls and command cleanup

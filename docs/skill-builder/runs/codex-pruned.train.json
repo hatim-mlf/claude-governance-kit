@@ -1,0 +1,157 @@
+{
+ "description": "Builds Agent Skills from idea to release. Use when creating or packaging a skill, turning a recurring workflow into a skill, or testing or repairing a skill's SKILL.md, trigger, or evals.",
+ "max_tool_calls": 6,
+ "runs": 3,
+ "scores": {
+  "building-skills": {
+   "pos_missed": 0,
+   "neg_fired": 0,
+   "rows": [
+    {
+     "query": "can you package my transcript-to-blog-post workflow as a reusable skill with a template in assets and a script that strips the timestamps",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "add a new skill to the governance kit that checks every ledger entry has evidence before it is closed",
+     "should_trigger": true,
+     "hits": 2,
+     "runs": 3,
+     "instead": [
+      "no-skill"
+     ],
+     "pass": true
+    },
+    {
+     "query": "build me a skill that converts my bank CSV exports into our ledger format, with the conversion done by a script instead of by hand",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "I want a new skill that drafts the app's social posts in Arabic and French from a feature changelog. Build it properly, with tests that show it beats just asking you.",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "I paste the same release-notes prompt every Friday and fix the same mistakes each time. Turn it into a proper skill for this project so it runs the same way every week.",
+     "should_trigger": true,
+     "hits": 2,
+     "runs": 3,
+     "instead": [
+      "no-skill"
+     ],
+     "pass": true
+    },
+    {
+     "query": "make a skill for reviewing our Supabase migrations before they're applied: check RLS policies, indexes on foreign keys, and that a down migration exists",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "I need a skill for writing French cover letters from my CV and a job post. Design it so it loads only when I'm applying for a job.",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "Add a line to CLAUDE.md saying we use pnpm, not npm, in this repo.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "instead": [
+      "skill:writing-for-agents",
+      "no-skill",
+      "no-skill"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Write the session report for today: what we changed in the ledger scripts and what is still open.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "instead": [
+      "skill:session-report",
+      "skill:session-report",
+      "skill:session-report"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Write the prompt for the next session: it should pick up bug 449 from the tracker and fix it test-first.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "instead": [
+      "skill:session-prompt",
+      "skill:session-prompt",
+      "skill:session-prompt"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Explain how progressive disclosure works in Anthropic's Agent Skills and why the description is always loaded but the body isn't.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "instead": [
+      "skill:claude-api",
+      "no-skill",
+      "skill:claude-api"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Write a hook that blocks git push --force on main in this repo.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "instead": [
+      "no-skill",
+      "skill:update-config",
+      "skill:update-config"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Create a subagent definition in .claude/agents for reviewing SQL migrations with the database-reviewer persona.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "instead": [
+      "no-skill",
+      "no-skill",
+      "no-skill"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Run the existing devoir-maths skill to make a 1BAC test on derivatives for next week.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "instead": [
+      "skill:devoir-maths",
+      "skill:devoir-maths",
+      "skill:devoir-maths"
+     ],
+     "pass": true
+    }
+   ]
+  }
+ }
+}

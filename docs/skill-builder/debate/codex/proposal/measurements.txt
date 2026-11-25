@@ -1,0 +1,6 @@
+Pushy description: 644 UTF-8 bytes
+Pruned description: 187 UTF-8 bytes
+Corpus lint: 9 PASS, 9 FAIL
+Proposal: 549 whitespace-delimited words
+lint_skill.py: 188 physical lines
+check_skill.py: 78 physical lines

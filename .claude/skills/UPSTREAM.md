@@ -54,7 +54,7 @@ upstream.
 
 ## Written here
 
-Nine skills have no upstream. They are listed so the generated catalog can tell "we wrote
+Ten skills have no upstream. They are listed so the generated catalog can tell "we wrote
 this" apart from "nobody recorded where this came from" — which are very different
 things, and the reason `unrecorded` is a finding rather than a default.
 
@@ -69,6 +69,7 @@ things, and the reason `unrecorded` is a finding rather than a default.
 | `obligations/` | Deadlines and must-dos: the register, the Notion sync with calendar reminders, and working one | 2026-10-31 |
 | `deepen-the-task/` | Before a new feature is built: what a top professional would do that was not asked, the rawest material, the methods and tools, and the outside proof, then the request rewritten to ask for exactly that (deeper, not bigger) | 2026-11-23 |
 | `decide-by-debate/` | Choosing between competing solutions: bars fixed first, independent proposals, cross-examination by runs, one scorer, a judge who wrote none of them, a written decision and a held-out check | 2026-11-23 |
+| `building-skills/` | A skill idea taken to a shipped skill: neighbours named, trigger queries (with near-misses and a held-out set) written before the description, then lint, trigger scoring on real skill files, task evals and a listing probe. No code copied: the lint rules restate Anthropic's published limits and `skill-creator`'s `quick_validate.py` checks (Apache-2.0), and `skill-creator` itself is only located, never vendored (`find_skill_creator.py`). Designed by debate: `docs/skill-builder/` | 2026-11-25 |
 
 The optional `modules/swift-xcode/swift-xcode-audit/` and `modules/seo-geo/seo-geo/` skills are
 also written-here, and are outside this directory on purpose: one is toolchain-specific, the other

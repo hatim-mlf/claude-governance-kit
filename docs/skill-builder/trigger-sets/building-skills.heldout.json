@@ -1,0 +1,34 @@
+[
+ {
+  "query": "this skill's description is way too long and it fires on prompts it has nothing to do with. rework the trigger text and measure that it only fires when it should",
+  "should_trigger": true
+ },
+ {
+  "query": "Create a SKILL.md that turns my raw meeting transcript into the weekly investor update format we use (metrics table, wins, asks).",
+  "should_trigger": true
+ },
+ {
+  "query": "the bug-report skill never fires by itself even when I describe a bug. figure out why its frontmatter is broken, fix it, and prove it triggers now",
+  "should_trigger": true
+ },
+ {
+  "query": "Turn what we just did, setting up the diagnostics channel step by step, into a skill so the next session does it exactly the same way.",
+  "should_trigger": true
+ },
+ {
+  "query": "Build an MCP server in TypeScript that exposes our Postgres tables as read-only tools.",
+  "should_trigger": false
+ },
+ {
+  "query": "Two fixes for the flaky ledger-id test both look credible, one adds a lock file and one retries. Debate them and pick one with evidence.",
+  "should_trigger": false
+ },
+ {
+  "query": "Deepen this feature request before we build it: add a dark mode toggle to the bug tracker dashboard.",
+  "should_trigger": false
+ },
+ {
+  "query": "Vendor the grilling skill from mattpocock/skills at the latest commit and update its SHA in UPSTREAM.md.",
+  "should_trigger": false
+ }
+]

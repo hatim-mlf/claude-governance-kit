@@ -25,7 +25,7 @@ prevents that — as files, scripts, and hooks inside the repo, not as a service
 | `reports/` | Bug / error / audit / session reports, each written with its own skill |
 | `reports/bugs reports/BUG_TRACKER.md` | The live defect register, with an honest status vocabulary (fixed ≠ verified) |
 | `STRUCTURAL_PROBLEMS.md` | The second register: tooling and process defects, plus lessons |
-| `.claude/skills/` | 14 skills: seven that record what happened or what is owed, seven that decide what to do |
+| `.claude/skills/` | 17 skills: seven that record what happened or what is owed, ten that decide or build (`building-skills` makes new skills, with lint and trigger tests) |
 | `.claude/rules/` | Path-scoped invariants that load only when relevant code is opened |
 | `scripts/` | Pre-commit gate (secrets block, ledger checks), ledger-id allocator, dashboard sync |
 | `bug-tracker-dashboard/` | Local Vite/React dashboard generated from the Markdown — ledger, defects, reports, project inventory |

@@ -1,0 +1,18 @@
+FAIL audit-report — strict YAML at SKILL.md:7: colon separator in a multi-line plain description; Claude Code can drop the description; use >- or quote it
+FAIL bug-report — strict YAML at SKILL.md:7: colon separator in a multi-line plain description; Claude Code can drop the description; use >- or quote it
+PASS codebase-design — structure valid
+PASS dashboard-sync — structure valid
+FAIL decide-by-debate — strict YAML at SKILL.md:3: mapping values are not allowed here
+FAIL deepen-the-task — strict YAML at SKILL.md:3: mapping values are not allowed here
+PASS diagnosing-bugs — structure valid
+FAIL error-report — strict YAML at SKILL.md:7: colon separator in a multi-line plain description; Claude Code can drop the description; use >- or quote it
+PASS grilling — structure valid
+PASS obligations — structure valid
+FAIL project-code-review — description angle brackets: remove < and >
+FAIL session-prompt — strict YAML at SKILL.md:7: colon separator in a multi-line plain description; Claude Code can drop the description; use >- or quote it
+FAIL session-report — strict YAML at SKILL.md:6: colon separator in a multi-line plain description; Claude Code can drop the description; use >- or quote it
+PASS tdd — structure valid
+PASS to-tickets — structure valid
+PASS writing-for-agents — structure valid
+PASS seo-geo — structure valid
+FAIL swift-xcode-audit — strict YAML at SKILL.md:7: colon separator in a multi-line plain description; Claude Code can drop the description; use >- or quote it

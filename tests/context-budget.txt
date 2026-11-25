@@ -26,8 +26,12 @@
 #   its own problems" (10,101 B) without raising, so this test was already red. The paragraph
 #   is now cut to its rule and pointers (detail moved to .claude/rules/diagnostics-channel.md,
 #   which loads only with application code): 9,964 B. Buys: every project's diagnostics state.
+#   2026-11-25: skill frontmatter 7,050 -> 7,250. building-skills (195 B of frontmatter; its 160 B description was the
+#   smallest of four candidates scored on trigger queries; docs/skill-builder/verdict.md).
+#   Buys: a lint and trigger scorer for every skill; six kit skills were found listed with no
+#   description at all. Measured total after adding it: 7,195 B.
 #
 # file-or-group                          max-bytes
 templates/CLAUDE.md                      10000
-skill-frontmatter                        7050
+skill-frontmatter                        7250
 .claude/rules/changing-the-governance-system.md   3300
