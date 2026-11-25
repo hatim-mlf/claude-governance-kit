@@ -1,0 +1,229 @@
+# Ledger
+
+An append-only execution log. **One folder per ISO week, one file per day inside it:**
+
+```
+ledger/
+  2026-W34/
+    README.md        generated index — do not hand-edit
+    2026-08-17.md
+    …
+    2026-08-23.md
+  2026-W35/
+```
+
+**Ids stay week-scoped and sequential across the whole week** — `2026-W34-70`, not
+`2026-08-23-04`. That is what makes the split safe: a citation names an id, never a path,
+so every id cited across the repository survives the layout change untouched. Find an entry
+with `grep -rn 2026-W34-70 ledger/` rather than by guessing its day.
+
+**Why days.** A busy week's single file passes several thousand lines within a month — one
+file nobody can open, read, or diff usefully. Split by day it stays in the hundreds.
+
+Publishing an entry regenerates its own week's index, so the index is normally not
+something you run by hand. Rebuild one directly only when repairing history:
+
+```bash
+scripts/generate-ledger-index.sh            # every week
+scripts/generate-ledger-index.sh 2026-W35   # one week
+```
+
+Get the week from the machine, not from memory:
+
+```bash
+date +"%G-W%V"     # ISO year and ISO week — 2026-W33
+```
+
+**The same applies to every timestamp in an entry, and it is the rule most easily
+skipped** — `Reserved:` and `### Closed —` are prose fields, so nothing rejects a wrong
+one. Read them off the machine too:
+
+```bash
+date +"%Y-%m-%d %H:%M %z"     # 2026-08-21 08:20 +0100
+```
+
+A fabricated timestamp is worse than a missing one: it reads as evidence.
+`scripts/check-ledger-entries.sh` compares an entry's stamps against its neighbours at
+commit time and warns on a contradiction.
+
+## What it is for
+
+Other logs record *what changed*, *how to undo a fix*, *which defects are open*, and
+*what a session did*. What none of them record is **what was started, when, by which
+model, and whether it ever finished**.
+
+That is the ledger. It is the spine the other logs cite instead of re-narrating each
+other. It is deliberately thin: if you find yourself writing paragraphs into it, that
+content belongs in a report, and the ledger entry should link to the report instead.
+
+## The rule
+
+**Reserve before starting. Close when done.** No task runs without an open entry.
+
+**One entry per commissioned task, not per step.** A task is what one session prompt,
+roadmap row, bug row or user request asks for. The probes, fixes and re-runs inside it
+go in that entry's closing block. Open a new entry only when the scope changes, and
+link it with `Follows from:`. Each entry costs about five tool calls of ceremony. In the
+project this kit came from, the median entry lasted six minutes, and ceremony came to
+16% of all tool calls, every one of them re-reading the session's whole context.
+
+Reserving before the work means the entry records what you *intended*, which is the
+only version of that information that survives contact with the work. An entry
+written afterwards is a summary, and there is already a place for summaries.
+
+## Reserving an entry
+
+Allocate an id with the command below. It claims the id immediately, even if the
+session stops before writing the entry. Claims are shared by linked worktrees and
+must not be removed; separate clones do not share claims:
+
+```bash
+scripts/next-ledger-id.sh
+```
+
+Append to **today's file** in the current week's folder —
+`ledger/$(date +%G-W%V)/$(date +%F).md`, creating it if this is the day's first entry:
+
+```markdown
+## YYYY-Www-NN — Fix cursor not advancing after scoped purge
+
+**Reserved:** 2026-08-15 14:02 +01
+**Model:** Sonnet 5
+**Session prompt:** `prompts/SESSION_<name>.md`   (if any)
+**Roadmap row:** `docs/roadmap/phase_08_cloud_sync_account.md` — 8.7  (if any)
+**Follows from:** YYYY-Www-NN                                          (if any)
+**Obligation:** O-3                                                    (if any — closing this entry closes it)
+
+**Expected files:**
+- `src/managers/SyncManager.ts`
+- `docs/FIX_LOG/D1_cursor_advance.md` (new)
+
+**Status:** 🟡 Open
+```
+
+**In Claude Code, writing the reservation publishes it.** The PostToolUse hook
+(`scripts/ledger-sync-guard.sh`) regenerates the week index and syncs the dashboard on
+the first tool call after any ledger write. **In any runtime without that hook**, publish
+the reservation yourself before implementation continues:
+
+```bash
+scripts/publish-ledger-entry.sh YYYY-Www-NN
+```
+
+Success means the week index counts this entry and the exact id appears as `open` in
+both the sync log and the generated dashboard catalog. Either way, the entry is
+*verified* at close, where the same command runs in every runtime.
+
+- **ID** — `<ISO year>-W<week>-NN`, sequential within the week, zero-padded, never
+  reused. Week-qualified so a citation from another log is unambiguous without a date
+  next to it.
+- **Model** — the model actually running the session, per `MODEL_DELEGATION.md`.
+  If the session prompt suggested one and a different one is running, record what is
+  running and note what was suggested. The suggestion is a plan; the ledger is a log.
+- **Expected files** — the honest guess at open time. It will not match the closing
+  list exactly, and the gap between them is the useful part.
+
+  **The dashboard reads this field.** While an entry is open it is the only file
+  information that exists — the closing block has not been written yet — so the
+  Ledger view shows it, labelled *expected*. Once the entry closes, both lists are
+  known and anything expected but never touched is listed separately. Same contract
+  as the closing block: backtick real paths, leave prose unbackticked. Globs are
+  ignored; directories are kept.
+
+## Closing an entry
+
+Append a closing block **under that same entry**. Not a new entry, not a new file.
+
+```markdown
+**Status:** ✅ Closed
+
+### Closed — 2026-08-15 16:40 +01
+
+**Summary:** One paragraph. What was done, not how.
+
+**Needs attention:** no
+
+**Files actually touched:**
+Created: `reports/bugs/2026-08-15_cursor_advance.md`
+Modified: `src/managers/SyncManager.ts`
+Deleted: nothing
+
+**Verified by:** The scenario run and the capture filename — or "Not verified",
+and what would verify it.
+
+**Report:** `reports/sessions/2026-08-15_cursor_advance.md`
+```
+
+Then publish the same id again. The command must report it as `closed` before the task
+is considered handed off:
+
+```bash
+scripts/publish-ledger-entry.sh YYYY-Www-NN
+```
+
+### `Needs attention:` — set when you close, never later
+
+`yes` or `no`, plus a short reason when `yes`. **Optional; absent means `no`.**
+
+Set it **at the moment you close the entry**, using your own judgment about what you
+just did. This is deliberately not a decision anyone makes afterwards, and explicitly not
+one the dashboard sync makes — the sync only ever *forwards* what is already tagged. The
+session that did the work is the only party that has the context, and it has it exactly
+once.
+
+**`yes` means a person must act before the work counts as done**, and the reason names
+the action: run this verification, decide this question, approve this cost. A defect
+found and already filed, a caveat written into the report, or "unverified" recorded
+honestly is `no`: the tracker and the report already carry it. Routine completed work is
+`no`.
+
+The bar is high on purpose. In the project this kit came from, `yes` was set on 323 of
+530 entries (61%), and a flag on most entries filters nothing.
+
+### `Files actually touched:` — what the sync can and cannot read
+
+Five prefixes are in use. Four describe files that changed; one does not:
+
+| Prefix | Parsed as touched? |
+|---|---|
+| `Created:` · `Modified:` · `Deleted:` · `Moved:` | ✅ yes |
+| `Not touched:` | ❌ **never** — it is negative space, and reading it as a change list would invert its meaning |
+
+**Backtick every real path, and leave prose unbackticked.** That one rule is what lets
+this stay readable prose *and* be machine-readable, with no second field duplicating it:
+the sync extracts backticked tokens and keeps only those that resolve to a real file
+under the repository root. So `the backup above` and `nothing` are ignored automatically.
+
+Paths are **repository-relative**. Continuation lines are fine; the sync reads the whole
+block until the next `**Bold:**` heading.
+
+## Rules that keep it trustworthy
+
+**A task's whole lifecycle lives in the day it was opened in.** A task opened on one day
+that finishes on another — or in the following week — is closed in the file where it
+started. Do not re-open it in today's file, and do not move it. The closing block's own
+`### Closed —` stamp carries the real finish time, so nothing is lost.
+
+**Past weeks are not edited retroactively** — the one exception being closing an
+entry that was still open. No fixing typos, no adding forgotten entries, no
+adjusting a summary after the fact. A log that gets rewritten is a draft.
+
+**An entry still open at the end of a session says so**, with `**Status:** 🟡 Open` and,
+directly below it, `**Status note:** <what remains, and what it is waiting on>`.
+Ambiguity here is the failure mode: an entry with no closing block and no note is
+indistinguishable from one someone forgot.
+
+**Statuses:** 🟡 Open · ✅ Closed · ⏸️ Abandoned (closed with a reason and no work
+landed, rather than left dangling). **The status line holds one of these and nothing
+else.** Qualifiers ("partially", "stopped at the gate", "the build is green") go on the
+`**Status note:**` line, where a reader sees them and a parser does not have to.
+`scripts/check-status-lines.sh` warns on new status lines that carry more.
+
+## How the other logs cite it
+
+Reports written with the `bug-report`, `error-report`, `audit-report`, and
+`session-report` skills all carry a `**Ledger:**` line naming the entry they were
+produced under.
+
+Nothing gets duplicated into the ledger in return. The ledger points outward; that
+is the whole design.

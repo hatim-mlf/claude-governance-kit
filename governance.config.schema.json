@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/claude-governance-kit/governance.config.schema.json",
+  "title": "claude-governance-kit configuration",
+  "description": "The single file that adapts the governance system to one repository. Every dashboard generator reads it and validates each root by its sentinel before touching the filesystem, so a wrong path here fails loudly at generation time instead of silently producing an empty catalog.",
+  "type": "object",
+  "required": ["projectName", "projectShortName", "tracker", "roots", "dashboard"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "projectName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name, rendered in the dashboard header."
+    },
+    "projectShortName": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Lowercase id used in log file names. Must be filename-safe."
+    },
+    "tracker": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to the live defect register, relative to the repository root."
+    },
+    "roots": {
+      "type": "object",
+      "description": "The directories the generators walk. Each carries a sentinel — a file or directory that must exist inside it — so a mistyped path is caught before anything is generated from the wrong tree.",
+      "required": ["repository", "reports", "ledger", "docs", "source"],
+      "additionalProperties": { "$ref": "#/definitions/root" },
+      "properties": {
+        "repository": { "$ref": "#/definitions/root" },
+        "reports":    { "$ref": "#/definitions/root" },
+        "ledger":     { "$ref": "#/definitions/root" },
+        "docs":       { "$ref": "#/definitions/root" },
+        "source":     { "$ref": "#/definitions/root" }
+      }
+    },
+    "kit": {
+      "type": "object",
+      "description": "Where this project's governance kit lives. Changes to kit-owned files are mirrored there (.claude/rules/changing-the-governance-system.md, step 3), and scripts/check-kit-drift.sh compares against it at commit time.",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "description": "Absolute path of the local kit clone. Written by install.sh." },
+        "remote": { "type": "string", "description": "The kit's git remote, where a mirrored change is pushed so every project can update from it." },
+        "projectOwned": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Kit-owned paths this project deliberately keeps its own version of (a tailored skill, a forked generator), or deliberately does not have (a kit skill it replaced with its own). update.sh never replaces or re-adds them, and the drift check stays quiet about them; kit changes reach them only by hand."
+        }
+      }
+    },
+    "notion": {
+      "type": "object",
+      "description": "Where scripts/obligations-sync.sh mirrors the obligations register (run by the post-commit hook). The Notion key is never stored here: it comes from $NOTION_TOKEN or the macOS Keychain service claude-governance-notion.",
+      "additionalProperties": false,
+      "properties": {
+        "database": { "type": "string", "description": "The Obligations database id, printed by scripts/obligations-sync.sh --setup. One database serves every project; the Project property separates them." },
+        "reminders": { "type": "boolean", "description": "Also mirror owed obligations to Apple Reminders (list 'Obligations'), so alerts reach the operator's phone. macOS only." }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "description": "The project's built-in diagnostics channel: how its features report starts, outcomes and failures to the project's own server (.claude/rules/diagnostics-channel.md). Read by scripts/check-diagnostics.sh. install.sh writes it from two questions.",
+      "required": ["state"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": ["implemented", "not-yet", "not-applicable"],
+          "description": "implemented: every part below exists. not-yet: `row` names where the channel is planned. not-applicable: `reason` says why (the project runs only where the operator can see it)."
+        },
+        "reason": { "type": "string", "description": "Required for not-applicable." },
+        "row": { "type": "string", "description": "Required for not-yet: the roadmap file (optionally #anchor) that plans the channel." },
+        "backend": { "type": "string", "description": "Where reports go: supabase, cloudflare, or another server the project owns. Required for implemented." },
+        "parts": {
+          "type": "object",
+          "description": "Each part is a path or glob, relative to the repository root, that must exist when the state is implemented.",
+          "additionalProperties": false,
+          "properties": {
+            "intake": { "type": "string", "description": "Server intake that validates shape, caps per install and globally, and purges on a schedule." },
+            "devTag": { "type": "string", "description": "Where dev and test builds are tagged so their reports are told apart from real users'." },
+            "contractTest": { "type": "string", "description": "The test proving every code the client can send is one the server keeps." },
+            "featureReports": { "type": "string", "description": "The typed start/outcome/failure codes, one list per feature." },
+            "reader": { "type": "string", "description": "The digest that someone reads (new codes, crashes, user reports)." },
+            "coverage": { "type": "string", "description": "The measure of which parts of the code still report nothing." }
+          }
+        }
+      }
+    },
+    "pathAliases": {
+      "type": "array",
+      "description": "Paths this project moved after ledger entries cited them. Entries are never edited, so the ledger catalog rewrites a cited path that matches `from` (a regular expression) to `to` ($1 etc. are capture groups). Applied in order.",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string" }
+        }
+      }
+    },
+    "dashboard": {
+      "type": "object",
+      "required": ["dir", "syncLog", "hookLog"],
+      "additionalProperties": false,
+      "properties": {
+        "dir": {
+          "type": "string",
+          "description": "The dashboard app directory, relative to the repository root."
+        },
+        "syncLog": {
+          "type": "string",
+          "description": "Append-only record of which ledger entries have been published, keyed by entry id. Lives in the repo; never edited by hand."
+        },
+        "hookLog": {
+          "type": "string",
+          "description": "Where the session hooks report a skipped sync. Deliberately OUTSIDE the repository — a hook that cannot find the repo must still be able to say so."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "root": {
+      "type": "object",
+      "required": ["path", "sentinel"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Directory relative to the repository root. \".\" is the root itself."
+        },
+        "sentinel": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A path inside `path` that must exist. \".\" means the directory's own existence is the check."
+        }
+      }
+    }
+  }
+}

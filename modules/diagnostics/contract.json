@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "about": "The wire contract between the app and its diagnostics intake. Client tests and the server's checks both follow it; check_events.py validates a JSON array of events against it. Change a limit here, in the server SQL, and in the client in one change.",
+  "event": {
+    "required": ["occurred_at", "install_id", "app_version", "build", "os_version", "device_model", "category", "code"],
+    "optional": ["session_id", "context"],
+    "pattern": {
+      "category": "^[a-z_]{1,32}$",
+      "code": "^[a-z0-9_.]{1,64}$",
+      "install_id": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "maxLength": { "app_version": 32, "build": 32, "os_version": 32, "device_model": 64 },
+    "context": {
+      "allowedKeys": ["status", "attempt", "count", "phase", "reason", "durationMs"],
+      "maxTextLength": 32,
+      "maxBytes": 2048
+    },
+    "devVersionPrefix": "dev-"
+  },
+  "outcomes": ["started", "succeeded", "nothing_to_do", "failed"],
+  "batch": { "maxEvents": 100 },
+  "server": { "perInstallPerDay": 500, "globalPerDay": 100000, "keepDays": 90 },
+  "crash": { "kinds": ["crash", "hang", "cpu", "disk", "launch"], "maxPayloadBytes": 65536, "perInstallPerDay": 20, "globalPerDay": 2000 },
+  "report": { "topics": ["general", "other"], "maxNoteChars": 2000, "maxRecentBytes": 32768, "perUserPerDay": 5, "globalPerDay": 500, "keepDays": 180 }
+}
