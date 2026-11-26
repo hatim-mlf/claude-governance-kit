@@ -68,6 +68,11 @@ RETIRED=(
   .claude/rules/new-material-is-placed-deliberately.md
   .claude/rules/skills-stay-indexed.md
   .claude/skills/grill-me                               # alias of grilling
+  # eval fixtures renamed to SKILL.fixture.md so no agent loads them as skills (2026-11-26)
+  .claude/skills/building-skills/evals/description-fires-too-often/files/skills/bug-report/SKILL.md
+  .claude/skills/building-skills/evals/description-fires-too-often/files/skills/code-review/SKILL.md
+  .claude/skills/building-skills/evals/description-fires-too-often/files/skills/session-report/SKILL.md
+  .claude/skills/building-skills/evals/repair-dropped-description/files/report-writer/SKILL.md
 )
 
 dash=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1])).get("dashboard",{}).get("dir",""))' \
