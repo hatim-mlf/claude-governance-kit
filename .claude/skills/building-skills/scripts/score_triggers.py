@@ -98,11 +98,14 @@ def watch(project: str, query: str, target: str, timeout: float) -> tuple[str, s
             except json.JSONDecodeError:
                 continue
             if ev.get("type") == "result":
-                if ev.get("is_error") and not saw_assistant:
-                    return ERROR, f"claude result error: {str(ev.get('result', ''))[:80]}"
-                return MISS, "no-skill"
+                text = str(ev.get("result", ""))[:80].replace("\n", " ")
+                if ev.get("is_error") or ev.get("subtype", "success") != "success":
+                    return ERROR, f"claude result error: {text}"
+                return MISS, f"no-skill: {text}" if not saw_assistant else "no-skill"
             if ev.get("type") != "assistant":
                 continue
+            if ev.get("message", {}).get("model") == "<synthetic>":  # API error shown as a reply
+                return ERROR, "synthetic error message: " + json.dumps(ev["message"].get("content"))[:80]
             saw_assistant = True
             decided = classify(ev, target)
             if decided:

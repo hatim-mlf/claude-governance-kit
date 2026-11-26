@@ -1,0 +1,62 @@
+{
+ "claudeVersion": "2.1.332",
+ "startedAt": "2026-11-26T09:37:59.526Z",
+ "costUsd": 2.1,
+ "aggregates": {
+  "casesTotal": 1,
+  "casesPassed": 1,
+  "overallScore": 0.75,
+  "overallPassRate": 0.5,
+  "meanDelta": 0.75
+ },
+ "cases": [
+  {
+   "name": "new-skill-from-workflow",
+   "aggregates": {
+    "score": 0.75,
+    "passRate": 0.5,
+    "scoreWithout": 0,
+    "passRateWithout": 0,
+    "delta": 0.75
+   },
+   "runs": {
+    "with": [
+     {
+      "score": 0.5,
+      "turns": 20,
+      "graders": {
+       "01-queries-before-description": false,
+       "02-lint-passes": true
+      }
+     },
+     {
+      "score": 1,
+      "turns": 20,
+      "graders": {
+       "01-queries-before-description": true,
+       "02-lint-passes": true
+      }
+     }
+    ],
+    "without": [
+     {
+      "score": 0,
+      "turns": 4,
+      "graders": {
+       "01-queries-before-description": false,
+       "02-lint-passes": false
+      }
+     },
+     {
+      "score": 0,
+      "turns": 6,
+      "graders": {
+       "01-queries-before-description": false,
+       "02-lint-passes": false
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

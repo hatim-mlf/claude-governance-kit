@@ -1,0 +1,20 @@
+{
+ "skill_name": "legacy-evals",
+ "evals": [
+  {
+   "id": 1,
+   "prompt": "Check widget 1 for drift.",
+   "expected_output": "A drift verdict."
+  },
+  {
+   "id": 2,
+   "prompt": "Check widget 2 for drift.",
+   "expected_output": "A drift verdict."
+  },
+  {
+   "id": 3,
+   "prompt": "Check widget 3 for drift.",
+   "expected_output": "A drift verdict."
+  }
+ ]
+}

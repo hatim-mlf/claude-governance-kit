@@ -1,0 +1,8 @@
+---
+name: legacy-evals
+description: Checks widgets for drift. Use when a widget spec changes.
+---
+
+# legacy-evals
+
+Checks widgets.

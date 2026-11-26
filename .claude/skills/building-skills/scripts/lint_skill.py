@@ -32,7 +32,11 @@ NON_STRING = re.compile(  # YAML 1.1 plain scalars that are not strings
 MD_LINK = re.compile(r"\]\(([^)#\s]+\.md)\)")
 MD_TICK = re.compile(r"`([A-Za-z0-9_./-]+\.md)`")
 BACKSLASH_PATH = re.compile(r"(?<![\w/])[\w.-]+\\[\w.-]+\.(md|py|sh|json|txt|ya?ml)\b")
-TOC = re.compile(r"(?im)^#+\s*(table of )?contents\s*$|^contents:?\s*$|(\]\(#[^)]+\)[^\n]*\n){3}")
+TOC_HEADING = re.compile(r"(?i)^(#+\s*)?(table of )?contents:?\s*$")
+TOC_INLINE = re.compile(r"(?im)^contents:\s*\S")
+TOC_ANCHORS = re.compile(r"(\]\(#[^)]+\)[^\n]*\n){3}")
+LIST_ITEM = re.compile(r"^\s*([-*+]|\d+\.)\s+\S")
+MIN_TOC_ENTRIES = 2  # a contents heading must be followed by a list, not left empty
 
 
 # ---------- frontmatter -------------------------------------------------------------------
@@ -194,6 +198,24 @@ def check_description(fields: dict) -> tuple[list[str], list[str]]:
     return fails, warns
 
 
+def has_toc(text: str) -> bool:
+    if TOC_INLINE.search(text) or TOC_ANCHORS.search(text):
+        return True
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        if not TOC_HEADING.match(line.strip()):
+            continue
+        after = [ln for ln in lines[i + 1:i + 1 + 20] if ln.strip()]
+        entries = 0
+        for ln in after:
+            if not LIST_ITEM.match(ln):
+                break
+            entries += 1
+        if entries >= MIN_TOC_ENTRIES:
+            return True
+    return False
+
+
 def referenced(text: str) -> set[str]:
     return set(MD_LINK.findall(text)) | set(MD_TICK.findall(text))
 
@@ -205,7 +227,7 @@ def check_resources(root: Path, body: str) -> tuple[list[str], list[str]]:
     for path in sorted(direct):
         rel = path.relative_to(root)
         text = path.read_text(errors="replace")
-        if len(text.split("\n")) > TOC_OVER and not TOC.search(text):
+        if len(text.split("\n")) > TOC_OVER and not has_toc(text):
             fails.append(f"RESOURCE-TOC: {rel} is over {TOC_OVER} lines and has no table of contents")
         if BACKSLASH_PATH.search(text):
             fails.append(f"PATH-BACKSLASH: {rel} has a backslash path; use forward slashes")

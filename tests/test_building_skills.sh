@@ -59,6 +59,7 @@ for m in "${modes[@]}"; do
   expect "$m" "$G/voice-roman-i" pass
   expect "$m" "$G/toc-plain-list" pass
   expect "$m" "$G/orphan-reference" pass
+  expect "$m" "$G/empty-toc" fail "RESOURCE-TOC"           # a contents heading with no list
   "$m" "$G/orphan-reference" | grep -q "WARN RESOURCE-ORPHAN" || fail "$m: orphan-reference should warn"
 done
 ok "guards 1-12: corpus and fixtures, in ${#modes[@]} mode(s)"
@@ -75,7 +76,10 @@ ok "guard 13: STRICT-YAML-UNVERIFIED only without PyYAML"
 expect no_yaml "$FX/corpus/pass/grilling" pass
 out=$(no_yaml --ship "$FX/corpus/pass/grilling" 2>&1) && fail "--ship without evals should FAIL"
 grep -q "FAIL EVALS" <<< "$out" || fail "--ship should name EVALS: $out"
-ok "guard 14: --ship gates on evals"
+out=$(no_yaml --ship "$FX/guards/empty-eval-dirs" 2>&1) && fail "empty eval folders are not cases"
+grep -q "FAIL EVALS" <<< "$out" || fail "empty-eval-dirs should name EVALS: $out"
+no_yaml --ship "$FX/guards/legacy-evals" > /dev/null || fail "three cases in evals/evals.json should count"
+ok "guard 14: --ship gates on evals (empty folders don't count, evals.json does)"
 
 # Guard 15: skill-creator discovery never auto-picks among several copies.
 fake_sc() { mkdir -p "$1/scripts"; : > "$1/scripts/run_eval.py"; }
@@ -125,6 +129,8 @@ case "$q" in
   *ERR*)   printf '{"type":"result","is_error":true,"result":"usage limit"}\n'; exit 1 ;;
   *DIE*)   exit 1 ;;
   *HANG*)  sleep 20 ;;
+  *SYNTH*) printf '{"type":"assistant","message":{"model":"<synthetic>","content":[{"type":"text","text":"API Error: 429"}]}}\n'
+           printf '{"type":"result","is_error":false,"subtype":"success","result":"API Error: 429"}\n' ;;
 esac
 FAKE
 chmod +x "$fake/claude"
@@ -132,7 +138,8 @@ mkdir -p "$SCRATCH/corpus/demo"; printf -- '---\nname: demo\ndescription: Demo. 
 cat > "$SCRATCH/q.json" <<'Q'
 {"demo": [{"query": "HIT me", "should_trigger": true}, {"query": "OTHER one", "should_trigger": true},
           {"query": "NONE here", "should_trigger": false}, {"query": "ERR out", "should_trigger": true},
-          {"query": "DIE now", "should_trigger": true}, {"query": "HANG on", "should_trigger": true}]}
+          {"query": "DIE now", "should_trigger": true}, {"query": "HANG on", "should_trigger": true},
+          {"query": "SYNTH limit", "should_trigger": true}]}
 Q
 rc=0
 FAKE_LOG="$SCRATCH/fake.log" PATH="$fake:$PATH" python3 -I "$SCORE" --corpus "$SCRATCH/corpus" \
@@ -145,9 +152,9 @@ rows = {r["query"].split()[0]: r for r in s["rows"]}
 assert rows["HIT"]["hits"] == 1 and rows["HIT"]["pass"] is True
 assert rows["OTHER"]["instead"] == ["skill:other"] and rows["OTHER"]["pass"] is False
 assert rows["NONE"]["pass"] is True
-for k in ("ERR", "DIE", "HANG"):
+for k in ("ERR", "DIE", "HANG", "SYNTH"):
     assert rows[k]["errors"] == 1 and rows[k]["runs"] == 0 and rows[k]["pass"] is None, k
-assert s["pos_missed"] == 1 and s["errors"] == 3 and s["inconclusive"] == 3
+assert s["pos_missed"] == 1 and s["errors"] == 4 and s["inconclusive"] == 4
 PY
 grep -q -- "--tools Skill,Read,Glob,Grep" "$SCRATCH/fake.log" && grep -q -- "--strict-mcp-config" "$SCRATCH/fake.log" \
   || fail "runs must be confined to read-only tools and no MCP: $(head -1 "$SCRATCH/fake.log")"

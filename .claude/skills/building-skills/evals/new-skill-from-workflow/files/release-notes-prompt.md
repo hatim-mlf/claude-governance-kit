@@ -1,0 +1,1 @@
+Read every pull request merged since the last git tag. Group them by area (app, server, docs, tooling). For each area write one short paragraph in our voice: plain words, no hype, name the user-visible change first. End with a 'Thanks' line naming outside contributors. Skip dependency bumps unless they fix a security issue.

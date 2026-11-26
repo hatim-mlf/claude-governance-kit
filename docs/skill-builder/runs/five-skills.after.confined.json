@@ -153,7 +153,7 @@
      "errors": 0,
      "instead": [
       "no-skill",
-      "skill:project-code-review",
+      "no-skill",
       "no-skill"
      ],
      "pass": true
@@ -205,15 +205,15 @@
      "errors": 0,
      "instead": [
       "skill:audit-report",
-      "no-skill",
-      "no-skill"
+      "skill:audit-report",
+      "skill:audit-report"
      ],
      "pass": true
     }
    ]
   },
   "error-report": {
-   "pos_missed": 2,
+   "pos_missed": 0,
    "neg_fired": 0,
    "errors": 0,
    "inconclusive": 0,
@@ -221,28 +221,20 @@
     {
      "query": "The Supabase migration failed with 'relation already exists'. Log this error properly.",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "vite build exits non-zero after the dependency bump, write an error report",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "The app shows the wrong user's data after switching accounts. File it.",
@@ -251,9 +243,9 @@
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
+      "skill:bug-report",
+      "skill:bug-report",
+      "skill:bug-report"
      ],
      "pass": true
     },
@@ -264,9 +256,9 @@
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
+      "skill:session-report",
+      "skill:session-report",
+      "skill:session-report"
      ],
      "pass": true
     }

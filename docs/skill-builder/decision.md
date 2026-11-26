@@ -66,23 +66,29 @@ Listing probe in this repository: full description printed.
 
 ## Still open
 
-0. error-report misses 2/2 held-out queries after the repair; rework its description with
-   building-skills steps 3-4 on fresh queries.
-1. Task evals with and without the skill (bar B3): three cases are written in
-   `.claude/skills/building-skills/evals/`; they need billed runs (`claude plugin eval` or
-   skill-creator), not run yet.
+1. Task evals (done; bar B3 passes): `claude plugin eval`, 3 cases, with and without the
+   skill, 2 runs each (`runs/task-evals/summary.json`, $4.35). **With the skill 0.83, without 0.17; the
+   skill wins every case** (fires-too-often 1.0 vs 0.0; repair-dropped-description 1.0 vs 0.5;
+   new-skill-from-workflow 0.5 vs 0.0). Two cases first scored low because the cases lacked
+   their input files (the agent rightly refused to invent them); fixed by giving them files.
+   Open: in new-skill-from-workflow the agent wrote SKILL.md before its trigger queries (0/2).
+   Step 3 was sharpened ("before SKILL.md exists"); re-run 1/2 (`runs/task-evals-step3/summary.json`).
+   Not yet reliable: the next fix is a check, e.g. lint_skill.py failing when no queries file
+   sits beside a new skill.
 2. Field test (done, separate commit): the nine flagged descriptions were rewritten as `>-`
    blocks, wording unchanged (project-code-review: "<commit>" became "a commit"). All 19 kit
    skills pass `lint_skill.py` and Anthropic's `quick_validate.py`; a listing probe prints all
-   nine descriptions. Held-out, re-scored with the confined scorer (read-only tools, no MCP,
-   errors apart from misses; `runs/five-skills.{before,after}.confined.json`): **before 10 of
-   10 should-trigger missed, after 2 of 10; near-misses 0 of 10 both.** The remaining misses
-   are error-report's two queries. An earlier unconfined run blamed session-report's wording;
-   under confinement it fires 2/2, so that claim was a scorer artefact and is withdrawn.
-   Confinement did not move building-skills' tuning score (0/7 missed, 0/7 fired).
-3. Codex fixtures `empty-toc`, `empty-eval-dirs`, `legacy-evals` were never saved; the
-   built lint covers the last two by design (only folders with `prompt.md` count; evals.json
-   counted), but no fixture proves it yet.
+   nine descriptions. Held-out, scored with the hardened scorer (read-only tools, no MCP; API
+   errors, synthetic error replies and timeouts counted apart from misses; 0 errors in these
+   runs; `runs/five-skills.{before,after}.confined.json`): **before 2 of 10 should-trigger
+   missed (session-report 2/2), after 0 of 10; near-misses 0 of 10 both.**
+   Withdrawn along the way, each a scorer artefact: "session-report's wording is the fault"
+   (unconfined run), "error-report misses 2/2" and "before 10/10" (a batch whose late runs
+   failed silently: the API errors arrived as ordinary results; error-report fires 6/6 when
+   re-run). The scorer now counts those as errors.
+3. Codex fixtures (done): `empty-toc` (a contents heading with no list now FAILs
+   RESOURCE-TOC; the lint had passed it), `empty-eval-dirs` (FAIL EVALS) and `legacy-evals`
+   (three cases in evals.json count) are guards in `tests/test_building_skills.sh`.
 
 Note: one tuning query named a real project; it was renamed to "the app's social posts" in
 `trigger-sets/` and `runs/` after scoring, so the kit carries no project names.

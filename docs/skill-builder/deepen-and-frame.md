@@ -25,12 +25,11 @@ Cause of the invisible six (swift-xcode-audit added after a probe the Sonnet pro
 This is the paper's thesis observed in your own library: the label decides whether the skill
 runs, and nothing checked the label. **This is the incident the system rests on.**
 
-Measured before repair (2026-11-25, real files, `.claude/skills/building-skills/scripts/score_triggers.py`, 3 runs per query, up to 6
-tool calls, `trigger-sets/five-skills.heldout.json`, result `runs/five-skills.before.v2.json`):
-**3 of 10 should-trigger queries missed** (session-report 2/2, audit-report 1/2; the other three
-fired on their names alone), 0 of 10 near-misses fired. A first probe that scored only the first
-tool call reported 5 of 10; it undercounted, because the model often runs `ls` before choosing a
-skill. Correction to the first draft of this file: "can never trigger" was too strong.
+Measured before repair (hardened scorer: real files, read-only tools, errors apart from misses,
+3 runs per query; `runs/five-skills.before.confined.json`): **2 of 10 should-trigger queries
+missed** (session-report 2/2); the other four fired on their names alone; 0 of 10 near-misses
+fired. Earlier, cruder probes reported 5/10, 3/10 and 10/10; each was a scorer fault, recorded
+in `decision.md`. Correction to the first draft of this file: "can never trigger" was too strong.
 
 ## 1. Field and professional
 

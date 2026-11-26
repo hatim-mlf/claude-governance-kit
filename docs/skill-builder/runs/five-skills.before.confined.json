@@ -43,9 +43,9 @@
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
+      "skill:session-prompt",
+      "skill:session-prompt",
+      "skill:session-prompt"
      ],
      "pass": true
     },
@@ -56,16 +56,16 @@
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
+      "skill:error-report",
+      "skill:error-report",
+      "skill:error-report"
      ],
      "pass": true
     }
    ]
   },
   "session-prompt": {
-   "pos_missed": 2,
+   "pos_missed": 0,
    "neg_fired": 0,
    "errors": 0,
    "inconclusive": 0,
@@ -73,28 +73,20 @@
     {
      "query": "Write the prompt for the next session: it picks up the ledger-index row and must stop and report before touching the dashboard.",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "turn a tracked bug into a commission for a fresh session sized to one context window",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "Summarize what this session did and close it out.",
@@ -116,16 +108,16 @@
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
+      "skill:deepen-the-task",
+      "skill:deepen-the-task",
+      "skill:deepen-the-task"
      ],
      "pass": true
     }
    ]
   },
   "audit-report": {
-   "pos_missed": 2,
+   "pos_missed": 0,
    "neg_fired": 0,
    "errors": 0,
    "inconclusive": 0,
@@ -133,28 +125,22 @@
     {
      "query": "The security sweep found six issues across the scripts folder. Write them up as one report with severities.",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "format these dependency-review findings into the audit format",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 2,
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
       "no-skill"
      ],
-     "pass": false
+     "pass": true
     },
     {
      "query": "The dashboard shows yesterday's ledger even after sync. File it as a defect.",
@@ -163,9 +149,9 @@
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
+      "skill:bug-report",
+      "skill:bug-report",
+      "skill:bug-report"
      ],
      "pass": true
     },
@@ -185,7 +171,7 @@
    ]
   },
   "bug-report": {
-   "pos_missed": 2,
+   "pos_missed": 0,
    "neg_fired": 0,
    "errors": 0,
    "inconclusive": 0,
@@ -193,28 +179,20 @@
     {
      "query": "The obligations page shows a due date one day early for every row since the timezone change. File a bug.",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "this is broken: clicking a ledger entry on the dashboard does nothing. log it in the tracker",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "The pre-commit hook rejected my commit with exit 1 and no message. Record the failure.",
@@ -223,9 +201,9 @@
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
+      "skill:error-report",
+      "skill:error-report",
+      "skill:error-report"
      ],
      "pass": true
     },
@@ -238,14 +216,14 @@
      "instead": [
       "no-skill",
       "no-skill",
-      "no-skill"
+      "skill:audit-report"
      ],
      "pass": true
     }
    ]
   },
   "error-report": {
-   "pos_missed": 2,
+   "pos_missed": 0,
    "neg_fired": 0,
    "errors": 0,
    "inconclusive": 0,
@@ -253,28 +231,20 @@
     {
      "query": "The Supabase migration failed with 'relation already exists'. Log this error properly.",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "vite build exits non-zero after the dependency bump, write an error report",
      "should_trigger": true,
-     "hits": 0,
+     "hits": 3,
      "runs": 3,
      "errors": 0,
-     "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
-     ],
-     "pass": false
+     "instead": [],
+     "pass": true
     },
     {
      "query": "The app shows the wrong user's data after switching accounts. File it.",
@@ -283,9 +253,9 @@
      "runs": 3,
      "errors": 0,
      "instead": [
-      "no-skill",
-      "no-skill",
-      "no-skill"
+      "skill:bug-report",
+      "skill:bug-report",
+      "skill:bug-report"
      ],
      "pass": true
     },

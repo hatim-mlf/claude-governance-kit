@@ -35,18 +35,20 @@ skill starts from its measured failure instead (a lint FAIL, a missed query).
 
 **Done when** the outside proof names a number that passes.
 
-### 3. Trigger: write the queries before the description
+### 3. Trigger: write the queries first, before SKILL.md exists
 
-Write 8–10 should-trigger queries (real phrasings, some that never name the skill) and
-8–10 **near-misses** taken from the neighbours' territory. Save them as a JSON list of
-`{"query", "should_trigger"}`, then split 60/40 into tuning and **held-out**. Nobody tunes on
-the held-out file.
+The queries are the yardstick the description is written against, so they come first: create
+the queries file **before creating `SKILL.md`**. Write 8–10 should-trigger queries (real
+phrasings, some that never name the skill) and 8–10 **near-misses** taken from the neighbours'
+territory, as a JSON list of `{"query", "should_trigger"}`. Split it 60/40 into tuning and
+**held-out** files. Nobody tunes on the held-out file.
 
-**Done when** both files exist and every neighbour owns at least one near-miss.
+**Done when** both files exist, `SKILL.md` does not exist yet (or, on a repair, is unchanged),
+and every neighbour owns at least one near-miss.
 
 ### 4. Trigger: write the description
 
-Front-load the leading word, one trigger per branch, third person, a few hundred bytes at
+Now create `SKILL.md` with its frontmatter. Front-load the leading word, one trigger per branch, third person, a few hundred bytes at
 most (it is loaded on every turn). Write it on **one line**, or as `>-` when long: a plain
 multi-line description containing `: ` is dropped whole by Claude Code. When two wordings
 are credible, run `decide-by-debate` with the queries as data.
