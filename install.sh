@@ -35,6 +35,17 @@ set -euo pipefail
 
 KIT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 
+# Files the kit owns under a folder: the ones git tracks, so caches and other untracked
+# files in the kit's working tree are never shipped (a .ruff_cache once reached four
+# projects). Without git (a downloaded archive), everything except known caches.
+kit_files() {
+  if git -C "$KIT_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git -C "$KIT_ROOT" ls-files -- "$1"
+  else
+    (cd "$KIT_ROOT" && find "$1" -type f ! -path '*/__pycache__/*' ! -path '*/.*_cache/*' ! -name .DS_Store)
+  fi
+}
+
 TARGET=""
 NAME=""
 SHORT=""
@@ -124,7 +135,15 @@ chmod +x "$TARGET"/scripts/*.sh "$TARGET"/scripts/*.py 2>/dev/null || true
 # --- skills ------------------------------------------------------------------
 for skill_dir in "$KIT_ROOT"/.claude/skills/*/; do
   skill=$(basename "$skill_dir")
-  copy_new ".claude/skills/$skill" ".claude/skills/$skill"
+  if [ -e "$TARGET/.claude/skills/$skill" ]; then
+    echo "  kept yours:    .claude/skills/$skill (template at kit:.claude/skills/$skill)"
+    continue
+  fi
+  while IFS= read -r rel; do
+    mkdir -p "$TARGET/$(dirname "$rel")"
+    cp -p "$KIT_ROOT/$rel" "$TARGET/$rel"
+  done < <(kit_files ".claude/skills/$skill")
+  echo "  installed:     .claude/skills/$skill"
 done
 copy_new ".claude/skills/UPSTREAM.md" ".claude/skills/UPSTREAM.md"
 

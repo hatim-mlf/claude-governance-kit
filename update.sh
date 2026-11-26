@@ -34,6 +34,17 @@
 set -euo pipefail
 
 KIT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+
+# Files the kit owns under a folder: the ones git tracks, so caches and other untracked
+# files in the kit's working tree are never shipped (a .ruff_cache once reached four
+# projects). Without git (a downloaded archive), everything except known caches.
+kit_files() {
+  if git -C "$KIT_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git -C "$KIT_ROOT" ls-files -- "$1"
+  else
+    (cd "$KIT_ROOT" && find "$1" -type f ! -path '*/__pycache__/*' ! -path '*/.*_cache/*' ! -name .DS_Store)
+  fi
+}
 DRY=0; COLLECT=0; FORCE=0; TARGET=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -72,9 +83,9 @@ is_project_owned() { [ -n "$project_owned" ] && printf '%s\n' "$project_owned" |
 # kit path -> project path, for every kit-owned file.
 pairs=()
 for f in "$KIT_ROOT"/scripts/*.sh; do pairs+=("scripts/$(basename "$f")|scripts/$(basename "$f")"); done
-while IFS= read -r f; do
-  rel="${f#"$KIT_ROOT"/}"; pairs+=("$rel|$rel")
-done < <(find "$KIT_ROOT/.claude/skills" -mindepth 2 -type f | sort)
+while IFS= read -r rel; do
+  pairs+=("$rel|$rel")
+done < <(kit_files .claude/skills | grep '^\.claude/skills/[^/]*/' | sort)
 pairs+=(".claude/rules/changing-the-governance-system.md|.claude/rules/changing-the-governance-system.md")
 pairs+=(".claude/rules/diagnostics-channel.md|.claude/rules/diagnostics-channel.md")
 if [ -d "$TARGET/$dash/scripts" ]; then
