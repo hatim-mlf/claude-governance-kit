@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: unequal-yardstick
+expected_outcome: |
+  The skill notices the two scores come from different periods, so they are not one yardstick, and requires both options scored on the same data before any verdict.
+context:
+  scaffold_script: place-files.sh

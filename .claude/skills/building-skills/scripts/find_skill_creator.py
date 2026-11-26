@@ -21,6 +21,8 @@ SEARCH = [  # relative to $HOME; where Claude Code installs skills and plugins
     ".claude/skills/synced/*/skill-creator",
     ".claude/plugins/marketplaces/*/plugins/skill-creator/skills/skill-creator",
     ".claude/plugins/cache/*/skill-creator/*/skills/skill-creator",
+    ".codex/skills/skill-creator",
+    ".agents/skills/skill-creator",
 ]
 HOW_TO_GET = (
     "Install the skill-creator plugin (/plugin, marketplace claude-plugins-official), or copy\n"

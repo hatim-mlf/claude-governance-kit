@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: cache-vs-index
+expected_outcome: |
+  Bars are written before any proposal, proposals are made independently, faults are tied to runs or flagged as questions, one scorer, a judge who wrote neither proposal.

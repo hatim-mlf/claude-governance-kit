@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: no-data-honest
+expected_outcome: |
+  With no data, the skill frames the decision and the bars, names what data must be collected or what runs to make, and does not declare a winner from arguments alone.

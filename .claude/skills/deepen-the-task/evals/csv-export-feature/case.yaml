@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: csv-export-feature
+expected_outcome: |
+  Four answers (professional habits, raw material, methods, outside proof) and a rewritten request at the same scope, handed back for a go; nothing is built.

@@ -71,7 +71,7 @@ Say what, other than the user and the agent agreeing, will show the result is ri
 Rewrite the user's request so it asks for exactly the answers to steps 2–5, in the user's own
 terms. Every line traces to the original request or to one of those answers; a line that traces to
 neither is cut. When the rewrite is the commission for a session, write it in the project's session
-prompt format (the `session-prompt` skill), with a stop gate before anything user-visible is built.
+prompt format (a session-prompt skill, if the project has one), with a stop gate before anything user-visible is built.
 
 **Done when** the rewrite is no bigger in scope than the request, and every requirement in it says
 what proves it met.

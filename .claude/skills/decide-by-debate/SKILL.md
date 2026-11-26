@@ -12,7 +12,7 @@ One mind proposing and judging its own solution confirms its first idea. A debat
 proposals are made apart, attacked with evidence, scored by one yardstick, and judged by someone who
 wrote none of them. The **runs** decide; the arguments only point at what to run.
 
-`grilling` is different: it asks the user questions. This skill settles a choice with evidence.
+Asking the user questions is a different job. This skill settles a choice with evidence.
 
 ## Steps
 
@@ -71,7 +71,7 @@ to the simpler method.
 
 Write `decision.md` beside the scorer: the question, who proposed what, the faults found and by whom,
 the score table, the verdict, what stays open, and the held-out test still to run. Then build the
-winner test-first (`tdd`), matched to the scorer's reference within a stated tolerance.
+winner test-first, matched to the scorer's reference within a stated tolerance.
 
 ### 7. Held-out check
 

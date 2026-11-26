@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: vague-request-pushback
+expected_outcome: |
+  The skill notices the request is too vague to deepen as written, names the field and professional only after pinning what 'better' means, or asks one precise question; it does not invent a large feature list.

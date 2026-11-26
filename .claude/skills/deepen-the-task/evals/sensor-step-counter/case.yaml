@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: sensor-step-counter
+expected_outcome: |
+  Names the field (signal processing / activity recognition), raw material (raw accelerometer samples, not the OS step count), concrete methods, and ground truth such as a hand-counted walk.

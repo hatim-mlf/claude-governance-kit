@@ -2,12 +2,13 @@
 
 Contents: commands · bars · lint rules · eval case layout · Anthropic's checklist · sources
 
-## Commands (paths relative to this skill's folder, `.claude/skills/building-skills/`)
+## Commands (paths relative to this skill's folder)
 
 ```sh
 python3 scripts/lint_skill.py [--ship] SKILL_DIR      # 0 pass, 1 fail, 2 usage
 python3 scripts/score_triggers.py --corpus PROJECT/.claude/skills \
   --queries tuning.json --candidate NAME --desc-file desc.txt --runs 3 --out run.json
+                                                       # add --runner codex to score with Codex
 python3 scripts/score_triggers.py --corpus PROJECT/.claude/skills --queries map.json
                                                        # existing skills: {"name": [queries]}
 python3 scripts/find_skill_creator.py [--skill-creator DIR]   # 0 found, 3 missing or ambiguous
@@ -26,7 +27,7 @@ before choosing a skill). Each run calls `claude -p`: about 3 × queries calls p
 | Held-out | same bar, scored once, after the description is frozen |
 | Task evals | with-skill pass rate above without-skill |
 | Listing probe | the full description is printed for the skill |
-| Library budget | kit: `tests/test_context_budget.sh` green |
+| Library budget | the sum of all descriptions stays small: each one is loaded on every turn |
 
 ## Lint rules
 
@@ -70,4 +71,4 @@ scenarios; team feedback.
 - platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices (limits, checklist)
 - code.claude.com/docs/en/skills (Claude Code frontmatter keys, locations)
 - Anthropic `skill-creator` (Apache-2.0): `quick_validate.py` rules, eval case schema
-- The kit's debate record: `docs/skill-builder/` (bars, faults found, verdict)
+- How it was designed and measured: `docs/HOW-IT-WORKS.md` in the skill-builder repository

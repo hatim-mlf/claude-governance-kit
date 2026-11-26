@@ -26,6 +26,28 @@ every directory. It configures invocation policy for Codex, and there is no Code
 harness here. A re-sync will show these as the only missing files; that is expected,
 not drift.
 
+### From skill-builder
+
+**Upstream:** https://github.com/hatim-mlf/skill-builder (written by this kit's maintainer,
+published separately so the skills can be shared and used from Codex too)
+**Commit:** `7b156d8beb279daee2c0b5af05f15711599a4b8f`
+**Dated:** 2026-11-26
+**Licence:** MIT (Copyright (c) 2026 skill-builder contributors; text as in this kit's LICENSE)
+
+| Directory | Upstream path | Files |
+|---|---|---|
+| `building-skills/` | `skills/building-skills/` | the whole folder: `SKILL.md`, `references/`, `scripts/`, `evals/` |
+| `deepen-the-task/` | `skills/deepen-the-task/` | `SKILL.md`, `evals/` |
+| `decide-by-debate/` | `skills/decide-by-debate/` | `SKILL.md`, `evals/` |
+
+Byte-for-byte identical; change them in skill-builder, then re-sync:
+
+```sh
+for s in building-skills deepen-the-task decide-by-debate; do
+  rsync -a --delete ~/Documents/skill-builder/skills/$s/ .claude/skills/$s/
+done   # then update the commit SHA above in the same commit
+```
+
 ## Re-syncing
 
 ```sh
@@ -54,7 +76,7 @@ upstream.
 
 ## Written here
 
-Ten skills have no upstream. They are listed so the generated catalog can tell "we wrote
+Seven skills have no upstream. They are listed so the generated catalog can tell "we wrote
 this" apart from "nobody recorded where this came from" — which are very different
 things, and the reason `unrecorded` is a finding rather than a default.
 
@@ -67,9 +89,6 @@ things, and the reason `unrecorded` is a finding rather than a default.
 | `session-prompt/` | The commission for the next session | inherited from the originating project |
 | `dashboard-sync/` | How the dashboard is kept current from the ledger and reports | inherited from the originating project |
 | `obligations/` | Deadlines and must-dos: the register, the Notion sync with calendar reminders, and working one | 2026-10-31 |
-| `deepen-the-task/` | Before a new feature is built: what a top professional would do that was not asked, the rawest material, the methods and tools, and the outside proof, then the request rewritten to ask for exactly that (deeper, not bigger) | 2026-11-23 |
-| `decide-by-debate/` | Choosing between competing solutions: bars fixed first, independent proposals, cross-examination by runs, one scorer, a judge who wrote none of them, a written decision and a held-out check | 2026-11-23 |
-| `building-skills/` | A skill idea taken to a shipped skill: neighbours named, trigger queries (with near-misses and a held-out set) written before the description, then lint, trigger scoring on real skill files, task evals and a listing probe. No code copied: the lint rules restate Anthropic's published limits and `skill-creator`'s `quick_validate.py` checks (Apache-2.0), and `skill-creator` itself is only located, never vendored (`find_skill_creator.py`). Designed by debate: `docs/skill-builder/` | 2026-11-25 |
 
 The optional `modules/swift-xcode/swift-xcode-audit/` and `modules/seo-geo/seo-geo/` skills are
 also written-here, and are outside this directory on purpose: one is toolchain-specific, the other
