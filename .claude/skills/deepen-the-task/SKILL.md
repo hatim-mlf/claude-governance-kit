@@ -1,6 +1,9 @@
 ---
 name: deepen-the-task
-description: Deepen a feature request before building it: a professional's habits, the rawest material, the methods, outside proof, then the request rewritten. Use before a new feature, or on "deeper".
+description: >-
+  Deepen a feature request before building it: a professional's habits, the rawest material,
+  the methods, outside proof, then the request rewritten. Use before a new feature, or on
+  "deeper".
 ---
 
 # Deepen the task

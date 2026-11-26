@@ -1,13 +1,14 @@
 ---
 name: project-code-review
-description: Review a diff on two independent axes at once — Standards (does it follow
-  this repository's documented rules and invariants?) and Spec (does it do what the row
-  that commissioned it asked for?) — run as parallel sub-agents so neither contaminates
-  the other. Use this skill whenever a change is about to be committed, when the user says
-  "review this", "review the diff", "review since <commit>", "check this before I commit",
-  or when a session's implementation work is finishing. Not for sweeping the whole project
-  for defects — that is a language-specific audit skill's job. Findings from either skill
-  are written up with audit-report.
+description: >-
+  Review a diff on two independent axes at once — Standards (does it follow this repository's
+  documented rules and invariants?) and Spec (does it do what the row that commissioned it
+  asked for?) — run as parallel sub-agents so neither contaminates the other. Use this skill
+  whenever a change is about to be committed, when the user says "review this", "review the
+  diff", "review since a commit", "check this before I commit", or when a session's
+  implementation work is finishing. Not for sweeping the whole project for defects — that is a
+  language-specific audit skill's job. Findings from either skill are written up with audit-
+  report.
 ---
 
 # Project Code Review

@@ -1,13 +1,13 @@
 ---
 name: bug-report
-description: Write a bug report for a defect in app or dashboard behaviour.
-  Use this skill whenever a defect in how the app or the dashboard
-  behaves is found, reproduced, or confirmed — wrong values on screen, a feature
-  that silently does nothing, data lost on account switch, a result that
-  disagrees with the server, a crash, a regression. Also triggers for: "file a
-  bug", "log this bug", "write a bug report", "this is broken", "add this to the
-  bug tracker", "record this defect". Not for failed commands, builds, or tool
-  calls — that is the error-report skill.
+description: >-
+  Write a bug report for a defect in app or dashboard behaviour. Use this skill whenever a
+  defect in how the app or the dashboard behaves is found, reproduced, or confirmed — wrong
+  values on screen, a feature that silently does nothing, data lost on account switch, a
+  result that disagrees with the server, a crash, a regression. Also triggers for: "file a
+  bug", "log this bug", "write a bug report", "this is broken", "add this to the bug tracker",
+  "record this defect". Not for failed commands, builds, or tool calls — that is the error-
+  report skill.
 ---
 
 # Bug Report

@@ -1,6 +1,9 @@
 ---
 name: decide-by-debate
-description: Choose between competing fixes by debate: bars first, proposals made apart, faults shown by runs, one scorer, a judge who wrote none. Use when more than one fix is credible, or on "debate".
+description: >-
+  Choose between competing fixes by debate: bars first, proposals made apart, faults shown by
+  runs, one scorer, a judge who wrote none. Use when more than one fix is credible, or on
+  "debate".
 ---
 
 # Decide by debate

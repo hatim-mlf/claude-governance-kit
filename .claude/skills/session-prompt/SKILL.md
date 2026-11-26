@@ -1,14 +1,14 @@
 ---
 name: session-prompt
-description: Write the prompt that will run the next working session. Use this
-  skill whenever the next session is being specified — after a session ends and the
-  follow-up needs writing, when a stop-and-report gate has been answered and the
-  decision must become work, when a backlog or register row is being picked up, or
-  when any file under prompts/ is being created or revised. Also triggers for:
-  "write the next session's prompt", "what should the next session do", "turn this
-  into a session", "draft the prompt for", "commission this work", "SESSION_*.md",
-  "hand this to a new session", "spec out the next session". Not for reporting on a
-  session that already ran — that is session-report.
+description: >-
+  Write the prompt that will run the next working session. Use this skill whenever the next
+  session is being specified — after a session ends and the follow-up needs writing, when a
+  stop-and-report gate has been answered and the decision must become work, when a backlog or
+  register row is being picked up, or when any file under prompts/ is being created or
+  revised. Also triggers for: "write the next session's prompt", "what should the next session
+  do", "turn this into a session", "draft the prompt for", "commission this work",
+  "SESSION_*.md", "hand this to a new session", "spec out the next session". Not for reporting
+  on a session that already ran — that is session-report.
 ---
 
 # Session Prompt

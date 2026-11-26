@@ -1,12 +1,12 @@
 ---
 name: session-report
-description: Write the session report for what a working session actually
-  did. Use this skill when a session ends, when work is being handed off or paused,
-  or when writing up a session's outcome — files touched, decisions made,
-  verification performed, what is still open or deferred. Also triggers for:
-  "write the session report", "wrap up this session", "session summary", "hand
-  this off", "what did we do", "close out the session", and whenever a phase_XX.md
-  Update Log entry or a session_*.md file is about to be written.
+description: >-
+  Write the session report for what a working session actually did. Use this skill when a
+  session ends, when work is being handed off or paused, or when writing up a session's
+  outcome — files touched, decisions made, verification performed, what is still open or
+  deferred. Also triggers for: "write the session report", "wrap up this session", "session
+  summary", "hand this off", "what did we do", "close out the session", and whenever a
+  phase_XX.md Update Log entry or a session_*.md file is about to be written.
 ---
 
 # Session Report

@@ -1,13 +1,12 @@
 ---
 name: audit-report
-description: The shared write-up format for any audit finding, whatever
-  produced it. Use this skill whenever audit findings are being written up — the
-  output of a code-audit skill, a security or performance sweep, a
-  pre-publish check, a dependency review, or any multi-finding review
-  that is not a single bug. Also triggers for: "write up the audit", "format
-  these findings", "audit report", "sweep results", "review findings",
-  "diagnosis report". This is the format contract audit skills write into; they
-  supply the findings, this supplies the shape.
+description: >-
+  The shared write-up format for any audit finding, whatever produced it. Use this skill
+  whenever audit findings are being written up — the output of a code-audit skill, a security
+  or performance sweep, a pre-publish check, a dependency review, or any multi-finding review
+  that is not a single bug. Also triggers for: "write up the audit", "format these findings",
+  "audit report", "sweep results", "review findings", "diagnosis report". This is the format
+  contract audit skills write into; they supply the findings, this supplies the shape.
 ---
 
 # Audit Report

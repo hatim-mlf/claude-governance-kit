@@ -69,8 +69,14 @@ Listing probe in this repository: full description printed.
 1. Task evals with and without the skill (bar B3): three cases are written in
    `.claude/skills/building-skills/evals/`; they need billed runs (`claude plugin eval` or
    skill-creator), not run yet.
-2. Field test: repair the six description-less skills (separate commit), then score
-   `trigger-sets/five-skills.heldout.json` against `runs/five-skills.before.v2.json`.
+2. Field test (done, separate commit): the nine flagged descriptions were rewritten as `>-`
+   blocks, wording unchanged (project-code-review: "<commit>" became "a commit"). All 19 kit
+   skills now pass `lint_skill.py` and Anthropic's `quick_validate.py`; a listing probe prints
+   all nine descriptions. Held-out (`runs/five-skills.after.json`, neighbours now include
+   building-skills): **missed 2 of 10 should-trigger (before: 3 of 10), fired 0 of 10.**
+   audit-report recovered; **session-report still misses 2 of 2** with its description
+   visible, so its wording, not its YAML, is now the fault. Next: rework session-report's
+   description with `building-skills` steps 3-4 on fresh queries; this held-out set is spent.
 3. Codex fixtures `empty-toc`, `empty-eval-dirs`, `legacy-evals` were never saved; the
    built lint covers the last two by design (only folders with `prompt.md` count; evals.json
    counted), but no fixture proves it yet.

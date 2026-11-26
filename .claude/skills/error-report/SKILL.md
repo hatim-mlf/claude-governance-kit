@@ -1,13 +1,13 @@
 ---
 name: error-report
-description: Write an error report for a failed command, build, migration, or
-  tool call. Use this skill whenever something in the toolchain fails rather than
-  the app misbehaving — a compile or link error, a failed database migration or
-  SQL statement, an npm/vite/build failure, a script that exits non-zero, a git
-  or hook rejection, an MCP or tool call that errors out. Also triggers for: "the
-  build failed", "this command errored", "log this error", "write an error
-  report", "migration failed", "why did that fail". Not for wrong app behaviour —
-  that is the bug-report skill.
+description: >-
+  Write an error report for a failed command, build, migration, or tool call. Use this skill
+  whenever something in the toolchain fails rather than the app misbehaving — a compile or
+  link error, a failed database migration or SQL statement, an npm/vite/build failure, a
+  script that exits non-zero, a git or hook rejection, an MCP or tool call that errors out.
+  Also triggers for: "the build failed", "this command errored", "log this error", "write an
+  error report", "migration failed", "why did that fail". Not for wrong app behaviour — that
+  is the bug-report skill.
 ---
 
 # Error Report

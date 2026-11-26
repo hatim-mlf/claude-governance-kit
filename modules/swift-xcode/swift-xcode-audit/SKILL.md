@@ -1,12 +1,12 @@
 ---
 name: swift-xcode-audit
-description: Perform a comprehensive code audit of an iOS/Swift/SwiftUI/Xcode project.
-  Use this skill whenever the user asks to audit, review, analyze code quality,
-  find bugs, find memory leaks, find race conditions, find thread safety issues,
-  find performance problems, check architectural patterns, or review any Swift or
-  SwiftUI or Xcode project. Also triggers for: "review my Swift code", "what's
-  wrong with my iOS app", "find issues in my project", "code quality check",
-  "is my Swift code good", "audit my codebase".
+description: >-
+  Perform a comprehensive code audit of an iOS/Swift/SwiftUI/Xcode project. Use this skill
+  whenever the user asks to audit, review, analyze code quality, find bugs, find memory leaks,
+  find race conditions, find thread safety issues, find performance problems, check
+  architectural patterns, or review any Swift or SwiftUI or Xcode project. Also triggers for:
+  "review my Swift code", "what's wrong with my iOS app", "find issues in my project", "code
+  quality check", "is my Swift code good", "audit my codebase".
 ---
 
 # Swift / Xcode Code Audit Skill
