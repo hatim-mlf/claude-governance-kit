@@ -88,7 +88,7 @@
      "pass": true
     },
     {
-     "query": "Write the prompt for the next session: it should pick up bug 449 from the tracker and fix it test-first.",
+     "query": "Write the prompt for the next session: it should pick up a tracked bug from the tracker and fix it test-first.",
      "should_trigger": false,
      "hits": 0,
      "runs": 3,
@@ -136,14 +136,14 @@
      "pass": true
     },
     {
-     "query": "Run the existing devoir-maths skill to make a 1BAC test on derivatives for next week.",
+     "query": "Run an existing exam-writing skill to make next week's test on derivatives.",
      "should_trigger": false,
      "hits": 0,
      "runs": 3,
      "instead": [
-      "skill:devoir-maths",
-      "skill:devoir-maths",
-      "skill:devoir-maths"
+      "skill:an existing exam-writing skill",
+      "skill:an existing exam-writing skill",
+      "skill:an existing exam-writing skill"
      ],
      "pass": true
     }

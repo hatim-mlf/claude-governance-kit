@@ -70,7 +70,7 @@
      "pass": true
     },
     {
-     "query": "turn bug 451 into a commission for a fresh session sized to one context window",
+     "query": "turn a tracked bug into a commission for a fresh session sized to one context window",
      "should_trigger": true,
      "hits": 3,
      "runs": 3,

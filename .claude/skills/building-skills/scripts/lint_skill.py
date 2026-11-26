@@ -151,8 +151,9 @@ def check_keys(fields: dict) -> tuple[list[str], list[str]]:
         if k in CLAUDE_CODE_KEYS:
             warns.append(f"KEY-CLAUDE-CODE-ONLY: '{k}' works in Claude Code; claude.ai and the "
                          "Skills API reject it")
-        else:
-            fails.append(f"KEY-UNKNOWN: unexpected frontmatter key '{k}'")
+        else:  # WARN: the Claude Code key list came from a truncated docs page (2026-11-25)
+            warns.append(f"KEY-UNKNOWN: '{k}' is neither a portable key nor a known Claude Code "
+                         "key; claude.ai and the Skills API reject it")
     return fails, warns
 
 

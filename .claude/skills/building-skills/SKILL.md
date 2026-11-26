@@ -11,9 +11,10 @@ no description at all, and nothing noticed: the label was never tested. This ski
 repairs a skill so that every layer has a check a script runs, and **done means every check
 passes**.
 
-Scripts are in this skill's `scripts/` folder. Run them, don't read them:
-`lint_skill.py` (rules), `score_triggers.py` (does the label fire), `find_skill_creator.py`
-(Anthropic's skill-creator, needed only for task evals). Rule ids, bars and the full
+Scripts are in this skill's own `scripts/` folder (in a kit project:
+`.claude/skills/building-skills/scripts/`, not the project's `scripts/`). Run them, don't read
+them: `lint_skill.py` (rules), `score_triggers.py` (does the label fire),
+`find_skill_creator.py` (Anthropic's skill-creator, needed only for task evals). Rule ids, bars and the full
 checklist: [references/checklist.md](references/checklist.md).
 
 ## Steps
@@ -80,7 +81,7 @@ handles its own errors and explains each constant.
 
 ### 8. Checks: prove it
 
-1. `python3 scripts/lint_skill.py --ship <skill-dir>`: zero FAIL.
+1. `python3 .claude/skills/building-skills/scripts/lint_skill.py --ship <skill-dir>`: zero FAIL.
 2. At least three task eval cases in `evals/<case>/` (layout in the checklist). With
    skill-creator found, run each with and without the skill; the skill must win.
 3. Score the frozen description **once** on the held-out file. A miss above the bar reopens

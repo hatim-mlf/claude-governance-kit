@@ -66,20 +66,25 @@ Listing probe in this repository: full description printed.
 
 ## Still open
 
+0. error-report misses 2/2 held-out queries after the repair; rework its description with
+   building-skills steps 3-4 on fresh queries.
 1. Task evals with and without the skill (bar B3): three cases are written in
    `.claude/skills/building-skills/evals/`; they need billed runs (`claude plugin eval` or
    skill-creator), not run yet.
 2. Field test (done, separate commit): the nine flagged descriptions were rewritten as `>-`
    blocks, wording unchanged (project-code-review: "<commit>" became "a commit"). All 19 kit
-   skills now pass `lint_skill.py` and Anthropic's `quick_validate.py`; a listing probe prints
-   all nine descriptions. Held-out (`runs/five-skills.after.json`, neighbours now include
-   building-skills): **missed 2 of 10 should-trigger (before: 3 of 10), fired 0 of 10.**
-   audit-report recovered; **session-report still misses 2 of 2** with its description
-   visible, so its wording, not its YAML, is now the fault. Next: rework session-report's
-   description with `building-skills` steps 3-4 on fresh queries; this held-out set is spent.
+   skills pass `lint_skill.py` and Anthropic's `quick_validate.py`; a listing probe prints all
+   nine descriptions. Held-out, re-scored with the confined scorer (read-only tools, no MCP,
+   errors apart from misses; `runs/five-skills.{before,after}.confined.json`): **before 10 of
+   10 should-trigger missed, after 2 of 10; near-misses 0 of 10 both.** The remaining misses
+   are error-report's two queries. An earlier unconfined run blamed session-report's wording;
+   under confinement it fires 2/2, so that claim was a scorer artefact and is withdrawn.
+   Confinement did not move building-skills' tuning score (0/7 missed, 0/7 fired).
 3. Codex fixtures `empty-toc`, `empty-eval-dirs`, `legacy-evals` were never saved; the
    built lint covers the last two by design (only folders with `prompt.md` count; evals.json
    counted), but no fixture proves it yet.
 
 Note: one tuning query named a real project; it was renamed to "the app's social posts" in
 `trigger-sets/` and `runs/` after scoring, so the kit carries no project names.
+
+Also renamed after scoring: tracked-bug numbers and a project skill name in the queries.

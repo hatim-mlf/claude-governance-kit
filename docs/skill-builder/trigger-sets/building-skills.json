@@ -17,8 +17,8 @@
  {"query": "Build an MCP server in TypeScript that exposes our Postgres tables as read-only tools.", "should_trigger": false},
  {"query": "Add a line to CLAUDE.md saying we use pnpm, not npm, in this repo.", "should_trigger": false},
  {"query": "Create a subagent definition in .claude/agents for reviewing SQL migrations with the database-reviewer persona.", "should_trigger": false},
- {"query": "Write the prompt for the next session: it should pick up bug 449 from the tracker and fix it test-first.", "should_trigger": false},
+ {"query": "Write the prompt for the next session: it should pick up a tracked bug from the tracker and fix it test-first.", "should_trigger": false},
  {"query": "Explain how progressive disclosure works in Anthropic's Agent Skills and why the description is always loaded but the body isn't.", "should_trigger": false},
- {"query": "Run the existing devoir-maths skill to make a 1BAC test on derivatives for next week.", "should_trigger": false},
+ {"query": "Run an existing exam-writing skill to make next week's test on derivatives.", "should_trigger": false},
  {"query": "Vendor the grilling skill from mattpocock/skills at the latest commit and update its SHA in UPSTREAM.md.", "should_trigger": false}
 ]

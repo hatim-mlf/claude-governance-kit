@@ -2,7 +2,7 @@
 
 Contents: commands · bars · lint rules · eval case layout · Anthropic's checklist · sources
 
-## Commands (from the skill's folder)
+## Commands (paths relative to this skill's folder, `.claude/skills/building-skills/`)
 
 ```sh
 python3 scripts/lint_skill.py [--ship] SKILL_DIR      # 0 pass, 1 fail, 2 usage
@@ -31,12 +31,14 @@ before choosing a skill). Each run calls `claude -p`: about 3 × queries calls p
 ## Lint rules
 
 FAIL: FRONTMATTER, YAML-COLON, YAML-FLOW, YAML-QUOTE, YAML-TAB, YAML-DUPLICATE, YAML-LINE,
-YAML-INDICATOR, YAML-PARSE (only when PyYAML is installed), KEY-UNKNOWN, NAME-MISSING,
+YAML-INDICATOR, YAML-PARSE (only when PyYAML is installed), NAME-MISSING,
 NAME-TYPE, NAME-LENGTH (64), NAME-CHARS, NAME-RESERVED (anthropic, claude), DESC-MISSING,
 DESC-TYPE, DESC-EMPTY, DESC-LENGTH (1,024), DESC-ANGLE, BODY-LENGTH (500), PATH-BACKSLASH,
 RESOURCE-TOC (100 lines), RESOURCE-CHAIN, SKILL-MD, SKILL-MD-COUNT, EVALS (`--ship`).
 
-WARN: STRICT-YAML-UNVERIFIED (no PyYAML), KEY-CLAUDE-CODE-ONLY (allowed in Claude Code,
+WARN: STRICT-YAML-UNVERIFIED (no PyYAML), KEY-UNKNOWN (in neither key list; the Claude Code
+list was read from a truncated docs page, so an unlisted key is not proof of an error),
+KEY-CLAUDE-CODE-ONLY (allowed in Claude Code,
 rejected by claude.ai and the Skills API), NAME-FOLDER, DESC-VOICE, DESC-WHEN,
 RESOURCE-ORPHAN, SCRIPT-PUNT.
 

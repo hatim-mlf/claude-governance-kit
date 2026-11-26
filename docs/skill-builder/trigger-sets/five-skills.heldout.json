@@ -7,7 +7,7 @@
  ],
  "session-prompt": [
   {"query": "Write the prompt for the next session: it picks up the ledger-index row and must stop and report before touching the dashboard.", "should_trigger": true},
-  {"query": "turn bug 451 into a commission for a fresh session sized to one context window", "should_trigger": true},
+  {"query": "turn a tracked bug into a commission for a fresh session sized to one context window", "should_trigger": true},
   {"query": "Summarize what this session did and close it out.", "should_trigger": false},
   {"query": "Deepen this request before we build it: export the ledger to CSV.", "should_trigger": false}
  ],

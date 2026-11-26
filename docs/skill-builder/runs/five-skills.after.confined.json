@@ -1,0 +1,276 @@
+{
+ "description": null,
+ "max_tool_calls": 6,
+ "tools": "Skill,Read,Glob,Grep",
+ "runs": 3,
+ "scores": {
+  "session-report": {
+   "pos_missed": 0,
+   "neg_fired": 0,
+   "errors": 0,
+   "inconclusive": 0,
+   "rows": [
+    {
+     "query": "We're done for today. Write up what this session changed in the obligations script, what we verified, and what's still open.",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "errors": 0,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "wrap up this session and hand it off, I'm switching machines",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "errors": 0,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "Write the prompt that commissions tomorrow's session on the dashboard sync bug.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "skill:session-prompt",
+      "skill:session-prompt",
+      "skill:session-prompt"
+     ],
+     "pass": true
+    },
+    {
+     "query": "npm run build just failed with a TS2307 error, log it",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "skill:error-report",
+      "skill:error-report",
+      "skill:error-report"
+     ],
+     "pass": true
+    }
+   ]
+  },
+  "session-prompt": {
+   "pos_missed": 0,
+   "neg_fired": 0,
+   "errors": 0,
+   "inconclusive": 0,
+   "rows": [
+    {
+     "query": "Write the prompt for the next session: it picks up the ledger-index row and must stop and report before touching the dashboard.",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "errors": 0,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "turn a tracked bug into a commission for a fresh session sized to one context window",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "errors": 0,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "Summarize what this session did and close it out.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "no-skill",
+      "no-skill",
+      "no-skill"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Deepen this request before we build it: export the ledger to CSV.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "skill:deepen-the-task",
+      "skill:deepen-the-task",
+      "skill:deepen-the-task"
+     ],
+     "pass": true
+    }
+   ]
+  },
+  "audit-report": {
+   "pos_missed": 0,
+   "neg_fired": 0,
+   "errors": 0,
+   "inconclusive": 0,
+   "rows": [
+    {
+     "query": "The security sweep found six issues across the scripts folder. Write them up as one report with severities.",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "errors": 0,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "format these dependency-review findings into the audit format",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "errors": 0,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "The dashboard shows yesterday's ledger even after sync. File it as a defect.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "skill:bug-report",
+      "skill:bug-report",
+      "skill:bug-report"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Review this diff before I commit.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "no-skill",
+      "skill:project-code-review",
+      "no-skill"
+     ],
+     "pass": true
+    }
+   ]
+  },
+  "bug-report": {
+   "pos_missed": 0,
+   "neg_fired": 0,
+   "errors": 0,
+   "inconclusive": 0,
+   "rows": [
+    {
+     "query": "The obligations page shows a due date one day early for every row since the timezone change. File a bug.",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "errors": 0,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "this is broken: clicking a ledger entry on the dashboard does nothing. log it in the tracker",
+     "should_trigger": true,
+     "hits": 3,
+     "runs": 3,
+     "errors": 0,
+     "instead": [],
+     "pass": true
+    },
+    {
+     "query": "The pre-commit hook rejected my commit with exit 1 and no message. Record the failure.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "skill:error-report",
+      "skill:error-report",
+      "skill:error-report"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Write up the six findings from the performance sweep.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "skill:audit-report",
+      "no-skill",
+      "no-skill"
+     ],
+     "pass": true
+    }
+   ]
+  },
+  "error-report": {
+   "pos_missed": 2,
+   "neg_fired": 0,
+   "errors": 0,
+   "inconclusive": 0,
+   "rows": [
+    {
+     "query": "The Supabase migration failed with 'relation already exists'. Log this error properly.",
+     "should_trigger": true,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "no-skill",
+      "no-skill",
+      "no-skill"
+     ],
+     "pass": false
+    },
+    {
+     "query": "vite build exits non-zero after the dependency bump, write an error report",
+     "should_trigger": true,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "no-skill",
+      "no-skill",
+      "no-skill"
+     ],
+     "pass": false
+    },
+    {
+     "query": "The app shows the wrong user's data after switching accounts. File it.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "no-skill",
+      "no-skill",
+      "no-skill"
+     ],
+     "pass": true
+    },
+    {
+     "query": "Wrap up the session.",
+     "should_trigger": false,
+     "hits": 0,
+     "runs": 3,
+     "errors": 0,
+     "instead": [
+      "no-skill",
+      "no-skill",
+      "no-skill"
+     ],
+     "pass": true
+    }
+   ]
+  }
+ }
+}

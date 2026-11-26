@@ -109,6 +109,50 @@ for py in python3 /usr/bin/python3; do
 done
 ok "guard 17: score_triggers.py runs on every python3 here"
 
+# Scorer outcomes, with a fake `claude` on PATH: a hit after orienting, a competing skill, no
+# skill, an error result, a crash and a hang. Errors and timeouts are never counted as misses
+# (a usage limit once turned every run into a "miss"), and runs are confined to read-only tools.
+fake="$SCRATCH/fakebin"; mkdir -p "$fake"
+cat > "$fake/claude" <<'FAKE'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FAKE_LOG"
+q=$2
+tool() { printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"%s","input":%s}]}}\n' "$1" "$2"; }
+case "$q" in
+  *HIT*)   tool Glob '{"pattern":"**"}'; tool Skill '{"skill":"demo"}' ;;
+  *OTHER*) tool Skill '{"skill":"other"}' ;;
+  *NONE*)  printf '{"type":"result","is_error":false}\n' ;;
+  *ERR*)   printf '{"type":"result","is_error":true,"result":"usage limit"}\n'; exit 1 ;;
+  *DIE*)   exit 1 ;;
+  *HANG*)  sleep 20 ;;
+esac
+FAKE
+chmod +x "$fake/claude"
+mkdir -p "$SCRATCH/corpus/demo"; printf -- '---\nname: demo\ndescription: Demo. Use on demo.\n---\n' > "$SCRATCH/corpus/demo/SKILL.md"
+cat > "$SCRATCH/q.json" <<'Q'
+{"demo": [{"query": "HIT me", "should_trigger": true}, {"query": "OTHER one", "should_trigger": true},
+          {"query": "NONE here", "should_trigger": false}, {"query": "ERR out", "should_trigger": true},
+          {"query": "DIE now", "should_trigger": true}, {"query": "HANG on", "should_trigger": true}]}
+Q
+rc=0
+FAKE_LOG="$SCRATCH/fake.log" PATH="$fake:$PATH" python3 -I "$SCORE" --corpus "$SCRATCH/corpus" \
+  --queries "$SCRATCH/q.json" --runs 1 --workers 6 --timeout 3 --out "$SCRATCH/s.json" > "$SCRATCH/s.txt" 2>&1 || rc=$?
+[ $rc -eq 4 ] || { cat "$SCRATCH/s.txt" >&2; fail "errored runs should exit 4, got $rc"; }
+python3 -I - "$SCRATCH/s.json" <<'PY' || fail "scorer outcomes wrong: $(cat "$SCRATCH/s.json")"
+import json, sys
+s = json.load(open(sys.argv[1]))["scores"]["demo"]
+rows = {r["query"].split()[0]: r for r in s["rows"]}
+assert rows["HIT"]["hits"] == 1 and rows["HIT"]["pass"] is True
+assert rows["OTHER"]["instead"] == ["skill:other"] and rows["OTHER"]["pass"] is False
+assert rows["NONE"]["pass"] is True
+for k in ("ERR", "DIE", "HANG"):
+    assert rows[k]["errors"] == 1 and rows[k]["runs"] == 0 and rows[k]["pass"] is None, k
+assert s["pos_missed"] == 1 and s["errors"] == 3 and s["inconclusive"] == 3
+PY
+grep -q -- "--tools Skill,Read,Glob,Grep" "$SCRATCH/fake.log" && grep -q -- "--strict-mcp-config" "$SCRATCH/fake.log" \
+  || fail "runs must be confined to read-only tools and no MCP: $(head -1 "$SCRATCH/fake.log")"
+ok "scorer: hit after orienting, other skill, no skill; errors and timeouts never count as misses"
+
 # The skill passes its own lint, including the ship gate.
 expect no_yaml "$SK" pass
 no_yaml --ship "$SK" > "$SCRATCH/self" || { cat "$SCRATCH/self" >&2; fail "building-skills fails its own --ship lint"; }
