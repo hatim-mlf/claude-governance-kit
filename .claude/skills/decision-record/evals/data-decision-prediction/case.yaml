@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: data-decision-prediction
+expected_outcome: |
+  The agent writes a data entry in docs/decisions/REGISTER.md with a prediction in the events' own measures, a 1-99 % confidence saying who gave it, an overturn condition with a number fixed now, and the checking events named, then runs the register lint and it passes.

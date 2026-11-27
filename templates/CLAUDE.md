@@ -112,7 +112,7 @@ set every subagent's model explicitly rather than letting it inherit. Full rule:
 
 ## Working discipline
 
-The six skills above record what happened. The nine below decide what to do and prove
+The six skills above record what happened. The ten below decide what to do and prove
 it worked:
 
 - **Before a hard bug gets a theory, use the `diagnosing-bugs` skill.** No hypothesis
@@ -120,6 +120,7 @@ it worked:
   bug.
 - **Before a new feature is built, use the `deepen-the-task` skill**: deeper, not bigger.
 - **When more than one fix is credible, use the `decide-by-debate` skill**: a judge who wrote none.
+- **When a decision is made, or its evidence arrives, use the `decision-record` skill**: a prediction an event checks.
 - **When a plan is not yet sharp, use the `grilling` skill.** It interviews you in rounds until
   no branch of the decision is left silently assumed.
 - **When designing or judging a module's shape, use the `codebase-design` skill** for

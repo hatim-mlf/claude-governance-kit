@@ -76,7 +76,7 @@ upstream.
 
 ## Written here
 
-Seven skills have no upstream. They are listed so the generated catalog can tell "we wrote
+Eight skills have no upstream. They are listed so the generated catalog can tell "we wrote
 this" apart from "nobody recorded where this came from" — which are very different
 things, and the reason `unrecorded` is a finding rather than a default.
 
@@ -89,6 +89,7 @@ things, and the reason `unrecorded` is a finding rather than a default.
 | `session-prompt/` | The commission for the next session | inherited from the originating project |
 | `dashboard-sync/` | How the dashboard is kept current from the ledger and reports | inherited from the originating project |
 | `obligations/` | Deadlines and must-dos: the register, the Notion sync with calendar reminders, and working one | 2026-10-31 |
+| `decision-record/` | Sorts a decision (data, values, reversible), records it in `docs/decisions/REGISTER.md` as a prediction with a confidence, an overturn number and the event that checks it, and scores it when that event arrives (`scripts/decisions.py lint/due/score`, Brier score). From Project A: none of 30 decision documents recorded whether the decision later held | 2026-11-27 |
 
 The optional `modules/swift-xcode/swift-xcode-audit/` and `modules/seo-geo/seo-geo/` skills are
 also written-here, and are outside this directory on purpose: one is toolchain-specific, the other

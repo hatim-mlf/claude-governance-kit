@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: evidence-arrives
+expected_outcome: |
+  The agent finds the register entry Ride B checks (D-4), compares the result with its overturn condition (one cog 1.6 % off is more than 1 %), marks it overturned with a Check line giving the date, the numbers and whether information was missed, leaves the Prediction and Confidence untouched, and leaves D-5 alone.
+context:
+  scaffold_script: place-files.sh

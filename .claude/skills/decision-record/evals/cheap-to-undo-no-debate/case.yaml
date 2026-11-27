@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: cheap-to-undo-no-debate
+expected_outcome: |
+  The agent sorts this as cheap to undo, decides it at once with one line of reason, records it, and runs no debate, no deepen and no long option survey, and does not hand the choice back to the user.
