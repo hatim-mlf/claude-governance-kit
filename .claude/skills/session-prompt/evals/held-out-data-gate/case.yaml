@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: held-out-data-gate
+expected_outcome: |
+  The prompt has a stop-and-report gate, phrased with the wrong action named, that forbids opening or parsing the held-out ride before its file fingerprints and the frozen estimator's predictions are committed; its Verification items are runs, not arguments.

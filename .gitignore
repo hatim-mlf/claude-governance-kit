@@ -6,3 +6,6 @@ dist/
 __pycache__/
 *.pyc
 .ruff_cache/
+
+# claude plugin eval traces (MBs per run); the numbers go in the ledger, not git
+.claude/skills/*/evals/results/

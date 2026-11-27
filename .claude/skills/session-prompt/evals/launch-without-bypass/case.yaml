@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: launch-without-bypass
+expected_outcome: |
+  The agent writes prompts/SESSION_<name>.md with Suggested model (with its reason and the condition that would change it), Purpose, Non-goals, Step 0, numbered Parts and Verification, then shows the launch command from the skill's launcher in dry-run: Remote Control named, no permission bypass because the user never asked for one.

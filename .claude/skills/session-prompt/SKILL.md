@@ -1,14 +1,11 @@
 ---
 name: session-prompt
 description: >-
-  Write the prompt that will run the next working session. Use this skill whenever the next
-  session is being specified — after a session ends and the follow-up needs writing, when a
-  stop-and-report gate has been answered and the decision must become work, when a backlog or
-  register row is being picked up, or when any file under prompts/ is being created or
-  revised. Also triggers for: "write the next session's prompt", "what should the next session
-  do", "turn this into a session", "draft the prompt for", "commission this work",
-  "SESSION_*.md", "hand this to a new session", "spec out the next session". Not for reporting
-  on a session that already ran — that is session-report.
+  Writes, revises or launches the prompt that runs a future session
+  (prompts/SESSION_*.md). Use when follow-up work must be handed to a fresh session, a stop
+  gate's answer must become work, a row is picked up, or that session is to be started in a
+  new terminal. Not for writing up a session that already ran (session-report) or splitting
+  work into rows (to-tickets).
 ---
 
 # Session Prompt
@@ -175,6 +172,11 @@ The earliest prompts made this explicit and it is still the best statement of it
 When the session depends on something a previous session left unresolved, Step 0 is where
 that dependency gets checked **first**, with instructions to stop if it has not cleared.
 
+**When the session builds a feature or fixes a bug, Step 0 also says so:** *"Run
+deepen-the-task first; when more than one fix is credible, decide-by-debate before
+building."* The operator's rule (2026-11-24): every fix and feature, even low priority. A prompt that
+leaves it out gets the first idea built.
+
 ### 5. `## Part N` — the work, numbered
 
 Numbered because they get cited: by the `Suggested model` line (*"Opus for Part 2"*), by
@@ -231,6 +233,15 @@ The corpus phrases these one way, and the phrasing carries the whole meaning:
 > *"stop and report **rather than archiving it**"*
 > *"stop and report **rather than guessing why**"*
 > *"stop **rather than assuming absence**"*
+> *"stop **rather than opening a held-out file before its fingerprint is committed**"*
+
+**A session that scores data needs that last one by name.** On 2026-11-26 (`2026-W48-60`)
+a ride meant to be scored was opened before its file digests were committed, which a
+pre-registration forbids. The gate was in the pre-registration, not in the prompt, and the
+session met it only after the breach. When a prompt touches recorded data that will judge
+a method, its gate says three things: commit the data's fingerprints first; commit the frozen
+method's predictions (or their hashes) before any truth is scored; and change nothing in the
+method once the data is open, since a change made after looking is a new study, not a fix.
 
 **Always name the wrong action.** "Stop and report if unsure" is not a gate — it has no
 trigger and no alternative. "Stop and report rather than archiving it" tells the session
@@ -262,6 +273,33 @@ costs, and a recommendation.** What it wants back is a choice — not approval t
    yes, rewrite it as a run.
 6. **Ask where a wrong guess would be expensive.** Each answer is a stop-and-report gate,
    and each gate names the wrong action.
+
+## Launching it
+
+**When the operator asks for the session to start now, in its own window,** run the
+launcher in this skill's folder rather than improvising a command (the `2026-W48-62` launch
+was hand-written):
+
+```sh
+<this skill's folder>/scripts/launch-session.sh [--bypass] PROMPT_FILE SESSION_NAME
+```
+
+It opens a new Terminal window in the repository, starts `claude` with Remote Control
+named `SESSION_NAME` (so the operator can follow it from another device), takes the model
+from the prompt's `Suggested model:` line, and tells the session to run the prompt under
+CLAUDE.md with every gate binding. `--dry-run` prints the command; the tests are in
+`scripts/test_launch-session.sh`.
+
+- **`--bypass` only when the operator's own message asks for bypassed permissions for this
+  session.** The operator's standing rule is never to use that flag; a request lifts it for
+  the one session named, not for the next one. The prompt's gates bind either way, so a
+  bypassed session's prompt must name every stop it would otherwise get as a permission ask
+  (schema, production writes, the account simulator).
+- **One writer per folder.** Once the new session runs, the launching session stops editing
+  the files the prompt gives it, and says so in its ledger close with the session name.
+
+**Done when** the launcher printed `launched <name>` and the window shows the session
+reading the prompt.
 
 ## What a prompt is not
 
